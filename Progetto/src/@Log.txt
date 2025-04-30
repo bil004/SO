@@ -1,0 +1,44 @@
+20/03 sincronizzazione inizializzazione processi Utente e direttore
+20/03 sincronizzazione inizializzazione processi Erogatore e direttore
+20/03 sincronizzazione inizializzazione processi Lavoratore e direttore
+20/03 sincronizzazione inizializzazione processi Sportello e direttore
+
+27/03 inizio lavoro su Operatore e capito come gestire il tempo della simulazione
+
+02/04 
+    - Aggiustato errori nella parte dei semafori
+    - Creata la gestione delle giornate dei lavoratori
+    - Aggiunto un counter dei giorni rimanenti alla fine della simulazione (DAYS_LEFT)
+
+03/04 
+    - AGGIUSTATO SINCRONIZZAZIONE INIZIO SIMULAZIONE
+
+13/04
+    - Cambiato sportello da processo a risorsa
+    - Iniziato code dei messaggi (da finire, aiutaci Sammy)
+    - Iniziato processo utente (gestione dei valori random)
+
+16/04
+    -IN CONF, N_NANO_SECS -> 1 minuto = 1 millisecondo
+    -aggiunto in Utenti la selezione dell'orario
+    -aggiustato le funzioni di nanosleep in direttore
+    -gestione giornata 8h lavoro - 16h riposo
+
+17/04
+    -Implementata coda di messaggi per la simulazione degli sportelli
+    -IMPORTANTE SISTEMARE IN OPERATORE LA GESTIONE DEGLI SPORTELLI (da fare)
+    -aggiunto lavori ai lavoratori
+
+24/04
+    -i lavoratori possono lavorare tutti i giorni
+    -i lavoratori lavorano solo se ricevono il messaggio (uno sportello libero)
+    -Sistemato in operatore la gestione degli sportelli
+    -CAMBIARE TIPO DI SPORTELLO A FINE GIORNATA (mettere creazione messaggi in funzione a parte) (da fare) 
+
+28/04
+    -creato il cambiamento di sportello a fine giornata
+    -DA COMPLETARE LA GESTIONE DI UTENTE SU PIU' GIORNATE
+
+30/04
+    -modifica del makefile
+    -RISCONTRO ERRORI CON NANOSLEEP ALL'ESECUZIONE
