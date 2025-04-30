@@ -10,6 +10,7 @@
 #include <sys/sem.h>
 #include <time.h>
 
+#include "../include/errorGestor.h"
 #include "../include/config.h"
 
 void sem_op(int semid, int sem_num, int sem_op) {
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     //incrementa semaforo per informare il padre
     sem_op(semUtente, 3, 1);
-    //int i = atoi(argv[3]);
+    int i = atoi(argv[3]);
     //printf("Inizializzazione Terminata utente %d\n", i);
     //Attende la risposta del padre
     sem_op(semUtente, 7, -1);
@@ -99,16 +100,7 @@ int main(int argc, char *argv[]) {
             }
 
             int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
-            long total_nanoseconds = 60 * 8 * shared_memory->N_NANO_SECS;
-            struct timespec sleep_time;
-            sleep_time.tv_sec = total_nanoseconds / 1000000000; // Secondi
-            sleep_time.tv_nsec = orario; // Nanosecondi
-
-            // Chiamata a nanosleep
-            if (nanosleep(&sleep_time, NULL) == -1) {
-                perror("Errore durante nanosleep");
-                exit(EXIT_FAILURE);
-            }
+            nanosleep((const struct timespec[]){0, orario}, NULL);
             //Controllo posta aperta
             //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
 

@@ -13,7 +13,13 @@
 #include <time.h>
 #include <sys/msg.h>
 
+#include "../include/errorGestor.h"
 #include "../include/config.h"
+
+void errExit(char* s) {
+    perror(s);
+    exit(EXIT_FAILURE);
+}
 
 typedef struct sportello{
     int tipoLavoro;
@@ -74,8 +80,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         case 0:
             printf("Erogatore ticket con pid:%d\n", getpid());
             execl("./erogatoreTicket", "./erogatoreTicket", semWaitInit_str, shmid_str, NULL);
-            perror("execl failure!");
-            exit(EXIT_FAILURE);
+            errExit("execl failure!");
             
         default:
             //wait(&erogatore_ticket);
@@ -122,39 +127,44 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
     //-------------------Lavoratori-----------------
     for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
-        if (fork()==0)
-        {
-            srand(time(NULL)^getpid());
-            char I[64];
-            char msgId_str[64];
-            sprintf(I, "%d", i);
-            sprintf(msgId_str, "%d", msgId);
-            int tipolavoro = (rand() % 6) + 1;
-            char tipoLavoro_str[64];
-            sprintf(tipoLavoro_str, "%d", tipolavoro);
-            execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);
-            perror("execl failure!");
-            exit(EXIT_FAILURE);
-        }else if (fork() == -1) {
-            perror("operatore process error!");
-            exit(EXIT_FAILURE);
+        switch(fork()) {
+            case -1:
+                errExit("operatore process error!");
+            
+            case 0:
+                //printf("sono Worker %d con PID: %d!\n", i, getpid());
+                srand(time(NULL)^getpid());
+                char I[64];
+                char msgId_str[64];
+                sprintf(I, "%d", i);
+                sprintf(msgId_str, "%d", msgId);
+                int tipolavoro = (rand() % 6) + 1;
+                char tipoLavoro_str[64];
+                sprintf(tipoLavoro_str, "%d", tipolavoro);
+                execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);
+                errExit("execl failure!");
+
+            default:
+
         }
-        
     }
 
     //-------------------Utenti------------------
     for(int i = 0; i < shared_memory->NOF_USERS; i++) {
-        if(fork()==0) {
-            char I[64];
-            sprintf(I, "%d", i);
-            execl("./utente", "./utente", semWaitInit_str, shmid_str, I, NULL);
-            perror("execl failure!");
-            exit(EXIT_FAILURE);
-        } else if (fork() == -1) {
-            perror("operatore process failure!");
-            exit(EXIT_FAILURE);
+        switch(fork()) {
+            case -1:
+                errExit("operatore process error!");
+            
+            case 0:
+                //printf("sono User %d!\n", i);
+                char I[64];
+                sprintf(I, "%d", i);
+                execl("./utente", "./utente", semWaitInit_str, shmid_str, I, NULL);
+                errExit("execl failure!");
+
+            default:
+                // niente wait 
         }
-        
     }
 
     //aspetta inizializzazione FIGLI
@@ -224,17 +234,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             sem_op(semWaitInit, 6, 1);
         }
 
-        long total_nanoseconds = 60 * 8 * shared_memory->N_NANO_SECS;
-        struct timespec sleep_time;
-        sleep_time.tv_sec = total_nanoseconds / 1000000000; // Secondi
-        sleep_time.tv_nsec = total_nanoseconds % 1000000000; // Nanosecondi
-
-        // Chiamata a nanosleep
-        if (nanosleep(&sleep_time, NULL) == -1) {
-            perror("Errore durante nanosleep");
-            exit(EXIT_FAILURE);
-        }
-        //nanosleep((const struct timespec[]){0, 60 * 8 * shared_memory->N_NANO_SECS}, NULL);
+        nanosleep((const struct timespec[]){0, 60 * 8 * shared_memory->N_NANO_SECS}, NULL);
 
         // aggiorna il semaforo per dire fine giornata
 
@@ -255,15 +255,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         if(shared_memory->DAYS_LEFT!=0)
             msg_enqueue(shared_memory, msgId, &message);
 
-        sleep_time.tv_sec = total_nanoseconds / 1000000000; // Secondi
-        sleep_time.tv_nsec = total_nanoseconds % 1000000000; // Nanosecondi
-
-        // Chiamata a nanosleep
-        if (nanosleep(&sleep_time, NULL) == -1) {
-            perror("Errore durante nanosleep");
-            exit(EXIT_FAILURE);
-        }
-        //nanosleep((const struct timespec[]){0, 60 * 16 * shared_memory->N_NANO_SECS}, NULL);
+        nanosleep((const struct timespec[]){0, 60 * 16 * shared_memory->N_NANO_SECS}, NULL);
         
 
 

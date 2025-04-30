@@ -11,6 +11,7 @@
 
 #include "../include/config.h"
 //#include "../include/erogatore_ticket.h"
+#include "../include/errorGestor.h"
 
 void sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
@@ -29,9 +30,6 @@ void sem_op(int semid, int sem_num, int sem_op) {
 int main(int argc, char *argv[]) {
     //FINE INIZIALIZZAZIONE
     int semErogatore = atoi(argv[1]);
-    if(argc!= 2){
-        return -1;
-    }
 
     //incrementa semaforo per informare il padre
     sem_op(semErogatore, 0, 1);

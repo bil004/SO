@@ -38,7 +38,3 @@
 28/04
     -creato il cambiamento di sportello a fine giornata
     -DA COMPLETARE LA GESTIONE DI UTENTE SU PIU' GIORNATE
-
-30/04
-    -modifica del makefile
-    -RISCONTRO ERRORI CON NANOSLEEP ALL'ESECUZIONE

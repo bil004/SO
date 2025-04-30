@@ -45,7 +45,7 @@ void load_config(const char *filename, Config *config) {
     config->DAYS_LEFT = config->SIM_DURATION;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     // Crea memoria condivisa per passare le config ai figli
     int shm_id = shmget(IPC_PRIVATE, sizeof(Config), IPC_CREAT | 0666);
     if (shm_id == -1) {
