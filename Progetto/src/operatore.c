@@ -12,7 +12,6 @@
 #include <time.h>
 #include <sys/msg.h>
 
-#include "../include/errorGestor.h"
 #include "../include/config.h"
 
 #define NOF_PAUSE 4

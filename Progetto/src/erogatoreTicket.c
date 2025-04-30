@@ -11,7 +11,6 @@
 
 #include "../include/config.h"
 //#include "../include/erogatore_ticket.h"
-#include "../include/errorGestor.h"
 
 void sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;

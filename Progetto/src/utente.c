@@ -10,7 +10,6 @@
 #include <sys/sem.h>
 #include <time.h>
 
-#include "../include/errorGestor.h"
 #include "../include/config.h"
 
 void sem_op(int semid, int sem_num, int sem_op) {
