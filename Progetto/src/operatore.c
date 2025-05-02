@@ -39,12 +39,11 @@ void sem_op(int semid, int sem_num, int sem_op)
     }
 }
 
-void cicloOperativo(int semLavoratore, int i){
+void cicloOperativo(int semLavoratore, int i, Config *shared_memory){
     
     printf("Lavoratore %d sta lavorando\n", i);
     while(1){
-        int valoreSemaforo = semctl(semLavoratore, 8, GETVAL);
-        if (valoreSemaforo > 0) {
+        if (shared_memory->DAY > 0) {
             // Semaforo impostato dal processo padre, termina il ciclo
             break;
         }
@@ -94,7 +93,7 @@ int main(int argc, char *argv[])
         se operatore serve un user, quando finisce controlla il semaforo e, se indica che la gg è finita, 
         conta la gestione del ticket come "non effettuata" */
 
-    while(semctl(semLavoratore, 8, GETVAL) == 0 && shared_memory->DAYS_LEFT > 0) {
+    while(shared_memory->DAY == 0 && shared_memory->DAYS_LEFT > 0) {
 
         printf("Simulazione iniziata, lavoratore: %d tipoLavoro: %d\n", i, tipoLavoro);
 
@@ -106,10 +105,10 @@ int main(int argc, char *argv[])
             }else{
                 msgFound = true;
             }
-        }while(!msgFound && semctl(semLavoratore, 8, GETVAL) == 0);
+        }while(!msgFound && shared_memory->DAY == 0);
         //printf("Lavoratore %d preso Sportello per lavoro %d\n", i, tipoLavoro);
         if(msgFound){
-            cicloOperativo(semLavoratore, i);
+            cicloOperativo(semLavoratore, i, shared_memory);
         }
 
         //Da qui la giornata è finita
@@ -118,7 +117,7 @@ int main(int argc, char *argv[])
 
         //ascolta sem 8 se giorni mancanti > 0;
         if(shared_memory->DAYS_LEFT > 0){
-            sem_op(semLavoratore, 8, 0);
+            while (shared_memory->DAY != 0){}
         }
     }
 

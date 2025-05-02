@@ -38,3 +38,10 @@
 28/04
     -creato il cambiamento di sportello a fine giornata
     -DA COMPLETARE LA GESTIONE DI UTENTE SU PIU' GIORNATE
+
+30/04
+    -Progetto quasi cestinato
+
+02/05
+    -fixato utenti su più giorni
+    -modificato gestione dei giorni, DAY in shared memory al posto che semaforo

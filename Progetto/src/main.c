@@ -43,6 +43,7 @@ void load_config(const char *filename, Config *config) {
 
     fclose(file);
     config->DAYS_LEFT = config->SIM_DURATION;
+    config->DAY = 0; // 0-inizio giornata    1-fine giornata
 }
 
 int main(int argc, char *argv[]) {
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
     load_config(CONFFILE, shared_memory);
 
     // Crea semaforo per l'attesa dell'inizializzazione dei figli
-    int semWaitInit = semget(IPC_PRIVATE, 9, IPC_CREAT | 0666);
+    int semWaitInit = semget(IPC_PRIVATE, 8, IPC_CREAT | 0666);
     if (semWaitInit == -1) {
         perror("semget failed");
         exit(1);
@@ -78,10 +79,9 @@ int main(int argc, char *argv[]) {
         5 = 
         6 = LavoratoriPadre
         7 = UtentiPadre
-        8 = FineGiornata
     */
     // Inizializza il semaforo per l'attesa dell'inizializzazione dei figli
-    for(int i=0; i<9; i++){
+    for(int i=0; i<8; i++){
         if(semctl(semWaitInit, i, SETVAL, 0) == -1) {
             perror("semctl failed");
             exit(1);

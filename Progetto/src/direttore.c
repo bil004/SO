@@ -217,8 +217,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         // aggiorna il semaforo per indicare che la giornata è iniziata e waita
         printf("[Direttore] Giorno %d iniziato.\n", giorno + 1);
         
-        //sem_op(semWaitInit, 8, -1);
-        semctl(semWaitInit, 8, SETVAL, 0); //reimposta il semaforo fine giornata a 0 (giornata non finita)
+        shared_memory->DAY = 0; //reimposta il semaforo fine giornata a 0 (giornata non finita)
 
         // reimposta i semafori
         for(int i=0; i<shared_memory->NOF_USERS; i++){
@@ -235,9 +234,9 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         nanosleep((const struct timespec[]){0, 60 * 8 * shared_memory->N_NANO_SECS}, NULL);
 
-        // aggiorna il semaforo per dire fine giornata
+        // aggiorna variabile per dire fine giornata
 
-        sem_op(semWaitInit, 8, 1); // segnale fine giornata
+        shared_memory->DAY = 1; //fine giornata
 
         //cambio dei lavori sportelli
 

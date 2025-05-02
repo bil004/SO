@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
     // -----------------------------------------------------------------------------
     int flag =0;
-    while(semctl(semUtente, 8, GETVAL) == 0 && shared_memory->DAYS_LEFT > 0){
+    while(shared_memory->DAY == 0 && shared_memory->DAYS_LEFT > 0){
     
         // Probabilità della decisione dell'utente
         srand(time(NULL)^getpid());
@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
                     break;
             }
 
+            flag ++;
             int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
             nanosleep((const struct timespec[]){0, orario}, NULL);
             //Controllo posta aperta
@@ -107,9 +108,10 @@ int main(int argc, char *argv[]) {
         else puts("Non vai alla posta");
         flag++;
 
-        //ascolta sem 8 se giorni mancanti > 0;
+        //ascolta DAY se giorni mancanti > 0;
         if(shared_memory->DAYS_LEFT > 0){
-            sem_op(semUtente, 8, 0);
+            while(shared_memory->DAY == 0){} //aspetta che la giornata sia finita (DAY = 1)
+            while(shared_memory->DAY == 1){} //aspetta che la prox. giornata sia iniziata (DAY = 0)
             flag=0;
         }
     }
