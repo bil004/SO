@@ -217,7 +217,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         // aggiorna il semaforo per indicare che la giornata è iniziata e waita
         printf("[Direttore] Giorno %d iniziato.\n", giorno + 1);
         
-        shared_memory->DAY = 0; //reimposta il semaforo fine giornata a 0 (giornata non finita)
+        semctl(semWaitInit, 8, SETVAL, 1+ shared_memory->NOF_WORKERS + shared_memory->NOF_USERS); //reimposta il semaforo fine giornata a 1 (giornata non finita)
 
         // reimposta i semafori
         for(int i=0; i<shared_memory->NOF_USERS; i++){
@@ -236,7 +236,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         // aggiorna variabile per dire fine giornata
 
-        shared_memory->DAY = 1; //fine giornata
+        semctl(semWaitInit, 8, SETVAL, 0); //reimposta il semaforo fine giornata a 0 (giornata finita)
 
         //cambio dei lavori sportelli
 

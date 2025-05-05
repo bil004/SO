@@ -45,3 +45,8 @@
 02/05
     -fixato utenti su più giorni
     -modificato gestione dei giorni, DAY in shared memory al posto che semaforo
+
+05/05
+    -fixata gestione giornata per utenti e operatori
+    -grazie sammy
+    -CAPIRE PERCHE' NON FINISCE LA SIMULAZIONE

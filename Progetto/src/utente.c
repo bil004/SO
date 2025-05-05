@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
     //printf("Running utente %d\n", i);
 
     // -----------------------------------------------------------------------------
-    int flag =0;
-    while(shared_memory->DAY == 0 && shared_memory->DAYS_LEFT > 0){
+    while(shared_memory->DAYS_LEFT > 0){
+        sem_op(semUtente, 8, -1);
     
         // Probabilità della decisione dell'utente
         srand(time(NULL)^getpid());
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
-        if(P_SERV <= fail && flag<1) {
+        if(P_SERV <= fail) {
             puts("Vai alla posta");
             
             switch (rand() % 6) {
@@ -98,22 +98,17 @@ int main(int argc, char *argv[]) {
                     break;
             }
 
-            flag ++;
             int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
             nanosleep((const struct timespec[]){0, orario}, NULL);
             //Controllo posta aperta
             //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
-
+            
         }
         else puts("Non vai alla posta");
-        flag++;
 
-        //ascolta DAY se giorni mancanti > 0;
-        if(shared_memory->DAYS_LEFT > 0){
-            while(shared_memory->DAY == 0){} //aspetta che la giornata sia finita (DAY = 1)
-            while(shared_memory->DAY == 1){} //aspetta che la prox. giornata sia iniziata (DAY = 0)
-            flag=0;
-        }
+        sem_op(semUtente, 8, 0);
+        //Aggiorna statistiche
+
     }
 
     // -----------------------------------------------------------------------------

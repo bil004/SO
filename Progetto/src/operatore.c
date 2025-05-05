@@ -39,15 +39,16 @@ void sem_op(int semid, int sem_num, int sem_op)
     }
 }
 
-void cicloOperativo(int semLavoratore, int i, Config *shared_memory){
+void cicloOperativo(int semLavoratore, int i){
     
     printf("Lavoratore %d sta lavorando\n", i);
     while(1){
-        if (shared_memory->DAY > 0) {
+        int valoreSemaforo = semctl(semLavoratore, 8, GETVAL);
+        if (valoreSemaforo == 0) {
             // Semaforo impostato dal processo padre, termina il ciclo
             break;
         }
-
+        //fa un lavoro
         //printf("ciao %d\n", i);
     }
     printf("Lavoratore %d ha finito di lavorare\n", i);
@@ -93,8 +94,8 @@ int main(int argc, char *argv[])
         se operatore serve un user, quando finisce controlla il semaforo e, se indica che la gg è finita, 
         conta la gestione del ticket come "non effettuata" */
 
-    while(shared_memory->DAY == 0 && shared_memory->DAYS_LEFT > 0) {
-
+    while(/*semctl(semLavoratore, 8, GETVAL) >= 1 && */shared_memory->DAYS_LEFT > 0) {
+        sem_op(semLavoratore, 8, -1);
         printf("Simulazione iniziata, lavoratore: %d tipoLavoro: %d\n", i, tipoLavoro);
 
         struct msgbuf message;
@@ -105,19 +106,16 @@ int main(int argc, char *argv[])
             }else{
                 msgFound = true;
             }
-        }while(!msgFound && shared_memory->DAY == 0);
+        }while(!msgFound && semctl(semLavoratore, 8, GETVAL) >= 1);
         //printf("Lavoratore %d preso Sportello per lavoro %d\n", i, tipoLavoro);
         if(msgFound){
-            cicloOperativo(semLavoratore, i, shared_memory);
-        }
+            cicloOperativo(semLavoratore, i);
+            //rilascio sportello
+            msgsnd(msgId, &message, sizeof(message.mtext), IPC_NOWAIT);
+            
+            //Da qui la giornata è finita sem 8 = 0;
 
-        //Da qui la giornata è finita
-        
-        msgsnd(msgId, &message, sizeof(message.mtext), IPC_NOWAIT);
-
-        //ascolta sem 8 se giorni mancanti > 0;
-        if(shared_memory->DAYS_LEFT > 0){
-            while (shared_memory->DAY != 0){}
+            //Aggiorna statistiche
         }
     }
 

@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     load_config(CONFFILE, shared_memory);
 
     // Crea semaforo per l'attesa dell'inizializzazione dei figli
-    int semWaitInit = semget(IPC_PRIVATE, 8, IPC_CREAT | 0666);
+    int semWaitInit = semget(IPC_PRIVATE, 9, IPC_CREAT | 0666);
     if (semWaitInit == -1) {
         perror("semget failed");
         exit(1);
@@ -79,9 +79,10 @@ int main(int argc, char *argv[]) {
         5 = 
         6 = LavoratoriPadre
         7 = UtentiPadre
+        8 = giornata
     */
     // Inizializza il semaforo per l'attesa dell'inizializzazione dei figli
-    for(int i=0; i<8; i++){
+    for(int i=0; i<9; i++){
         if(semctl(semWaitInit, i, SETVAL, 0) == -1) {
             perror("semctl failed");
             exit(1);
