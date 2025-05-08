@@ -50,3 +50,7 @@
     -fixata gestione giornata per utenti e operatori
     -grazie sammy
     -CAPIRE PERCHE' NON FINISCE LA SIMULAZIONE
+
+08/05
+    -makefile creato
+    -fixato e defixato fine simulazione
