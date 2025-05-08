@@ -54,3 +54,5 @@
 08/05
     -makefile creato
     -fixato e defixato fine simulazione
+    -aggiunto messaggi di debug e la kill()
+    -correggere la chiusura dei processi e la rimozione dei semafori (DA FARE)

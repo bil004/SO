@@ -244,7 +244,13 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             puts("Giorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno
             for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
-                kill(pid_array[i], SIGUSR1);
+                if (kill(pid_array[i], 0) == 0) {
+                    printf("Invio segnale a PID: %d\n", pid_array[i]);
+                    if (kill(pid_array[i], SIGUSR1) == -1) {
+                        perror("Errore nell'invio del segnale");
+                    }
+                    printf("Segnale inviato a PID: %d\n", pid_array[i]);
+                } 
             }
             break;
         }
@@ -268,7 +274,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     }
 
 
-    while (1) {
+    /*while (1) {
         pid_t pid = waitpid(-1, NULL, 0); // Aspetta qualunque figlio
         if (pid == -1) {
             if (errno == ECHILD) {
@@ -282,8 +288,9 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         } else {
             //printf("Figlio terminato, PID: %d\n", pid);
         }
-    }
+    }*/
 
+    puts("vorp?");
     // Deallocazione della coda di messaggi
     if (msgctl(msgId, IPC_RMID, NULL) == -1) {
         perror("Errore nella deallocazione della coda di messaggi");

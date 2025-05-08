@@ -54,6 +54,7 @@ int sem_op(int semid, int sem_num, int sem_op)
         perror("Errore nel semaforo");
         exit(EXIT_FAILURE);
     }
+    puts("END_SEM_OP");
 }
 
 void cicloOperativo(int semLavoratore, int i)
