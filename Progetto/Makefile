@@ -1,36 +1,26 @@
-# Imposta la directory dei sorgenti (adatta il percorso se necessario)
+# Imposta la directory dei sorgenti e dei binari
 SRC_DIR = src
 BIN_DIR = bin
 
 # Specifichiamo il compilatore e le opzioni di compilazione
 CC = gcc
-CFLAGS = -Wall -I$(SRC_DIR)
+CFLAGS = -Wall -Wextra -I$(SRC_DIR)
 
-all: makedir $(BIN_DIR)/main $(BIN_DIR)/direttore $(BIN_DIR)/erogatoreTicket $(BIN_DIR)/operatore $(BIN_DIR)/utente
+# Lista dei file sorgenti e degli eseguibili
+SOURCES = main.c direttore.c erogatoreTicket.c operatore.c utente.c
+EXECUTABLES = $(SOURCES:%.c=$(BIN_DIR)/%)
 
-# Regola per il programma padre (main)
-$(BIN_DIR)/main: $(SRC_DIR)/main.c
-	$(CC) $(CFLAGS) -o $(BIN_DIR)/main $(SRC_DIR)/main.c
+# Regola principale
+all: makedir $(EXECUTABLES)
 
-# Regola per il programma figlio direttore
-$(BIN_DIR)/direttore: $(SRC_DIR)/direttore.c
-	$(CC) $(CFLAGS) -o $(BIN_DIR)/direttore $(SRC_DIR)/direttore.c
+# Regola generica per compilare ogni file sorgente
+$(BIN_DIR)/%: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -o $@ $<
 
-# Regola per il programma figlio erogatoreTicket
-$(BIN_DIR)/erogatoreTicket: $(SRC_DIR)/erogatoreTicket.c
-	$(CC) $(CFLAGS) -o $(BIN_DIR)/erogatoreTicket $(SRC_DIR)/erogatoreTicket.c
-
-# Regola per il programma figlio operatore
-$(BIN_DIR)/operatore: $(SRC_DIR)/operatore.c
-	$(CC) $(CFLAGS) -o $(BIN_DIR)/operatore $(SRC_DIR)/operatore.c
-
-# Regola per il programma figlio utente
-$(BIN_DIR)/utente: $(SRC_DIR)/utente.c
-	$(CC) $(CFLAGS) -o $(BIN_DIR)/utente $(SRC_DIR)/utente.c
-
-makedir: 
-	mkdir -p bin
+# Regola per creare la directory bin
+makedir:
+	mkdir -p $(BIN_DIR)
 
 # Regola per pulire i file compilati
 clean:
-	rm -rf $(BIN_DIR)/*
+	rm -rf $(BIN_DIR)

@@ -27,6 +27,11 @@ void sem_op(int semid, int sem_num, int sem_op) {
 // devo prendere i valori dal padre e poi inserirli nel ticket
 
 int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Incorrect number of arg\n");
+        exit(1);
+    }
+
     //FINE INIZIALIZZAZIONE
     int semErogatore = atoi(argv[1]);
 

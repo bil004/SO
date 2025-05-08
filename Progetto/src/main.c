@@ -9,7 +9,7 @@
 
 #include"../include/config.h"
 
-#define CONFFILE "post_office.conf"
+#define CONFFILE "../src/post_office.conf"
 
 void load_config(const char *filename, Config *config) {
     FILE *file = fopen(filename, "r");
@@ -46,7 +46,7 @@ void load_config(const char *filename, Config *config) {
     config->DAY = 0; // 0-inizio giornata    1-fine giornata
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     // Crea memoria condivisa per passare le config ai figli
     int shm_id = shmget(IPC_PRIVATE, sizeof(Config), IPC_CREAT | 0666);
     if (shm_id == -1) {

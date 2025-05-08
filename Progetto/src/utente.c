@@ -46,7 +46,6 @@ int main(int argc, char *argv[]) {
 
     //incrementa semaforo per informare il padre
     sem_op(semUtente, 3, 1);
-    int i = atoi(argv[3]);
     //printf("Inizializzazione Terminata utente %d\n", i);
     //Attende la risposta del padre
     sem_op(semUtente, 7, -1);
@@ -100,7 +99,7 @@ int main(int argc, char *argv[]) {
             }
 
             int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
-            nanosleep((const struct timespec[]){0, orario}, NULL);
+            nanosleep((const struct timespec[]){{0, orario}}, NULL);
             //Controllo posta aperta
             //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
             

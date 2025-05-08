@@ -75,11 +75,13 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         case -1:
             perror("erogatore_ticket not created!");
             exit(EXIT_FAILURE);
+            break;
 
         case 0:
             printf("Erogatore ticket con pid:%d\n", getpid());
             execl("./erogatoreTicket", "./erogatoreTicket", semWaitInit_str, shmid_str, NULL);
             errExit("execl failure!");
+            break;
             
         default:
             //wait(&erogatore_ticket);
@@ -129,7 +131,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         switch(fork()) {
             case -1:
                 errExit("operatore process error!");
-            
+                break;
+
             case 0:
                 //printf("sono Worker %d con PID: %d!\n", i, getpid());
                 srand(time(NULL)^getpid());
@@ -142,6 +145,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 sprintf(tipoLavoro_str, "%d", tipolavoro);
                 execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);
                 errExit("execl failure!");
+                break;
 
             default:
 
@@ -152,7 +156,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     for(int i = 0; i < shared_memory->NOF_USERS; i++) {
         switch(fork()) {
             case -1:
-                errExit("operatore process error!");
+                errExit("utente process error!");
+                break;
             
             case 0:
                 //printf("sono User %d!\n", i);
@@ -160,6 +165,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 sprintf(I, "%d", i);
                 execl("./utente", "./utente", semWaitInit_str, shmid_str, I, NULL);
                 errExit("execl failure!");
+                break;
 
             default:
                 // niente wait 
@@ -232,7 +238,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             sem_op(semWaitInit, 6, 1);
         }
 
-        nanosleep((const struct timespec[]){0, 60 * 8 * shared_memory->N_NANO_SECS}, NULL);
+        nanosleep((const struct timespec[]){{0, 60 * 8 * shared_memory->N_NANO_SECS}}, NULL);
 
         // aggiorna variabile per dire fine giornata
 
@@ -259,7 +265,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             break;
         }
 
-        nanosleep((const struct timespec[]){0, 60 * 16 * shared_memory->N_NANO_SECS}, NULL);
+        nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
         
 
 
