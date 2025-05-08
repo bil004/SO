@@ -90,7 +90,9 @@ int main() {
     }
 
     // Avvia il direttore usando exec
-    if (fork() == 0) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        pid = getpid();
         char shm_id_str[10], semWaitInit_str[10];
         snprintf(shm_id_str, 10, "%d", shm_id);
         snprintf(semWaitInit_str, 10, "%d", semWaitInit);
@@ -101,7 +103,10 @@ int main() {
 
 
     // Attendi che il direttore termini
-    wait(NULL);
+    if (waitpid(pid, NULL, 0) == -1) {
+        perror("Errore durante waitpid");
+        exit(1);
+    }
 
     if (shmdt(shared_memory) == -1) {
         perror("shmdt failed");
@@ -113,11 +118,13 @@ int main() {
         perror("shmctl failed");
         exit(1);
     }
-    
-    if (semctl(semWaitInit, 0, IPC_RMID) == -1) {
-        perror("Errore nella rimozione del semaforo");
-        exit(1);
-    }
+    /*
+    for(int i=0; i<9; i++){
+        if(semctl(semWaitInit, i, IPC_RMID) == -1) {
+            perror("semctl failed");
+            exit(1);
+        }
+    }*/
     
     printf("Simulazione terminata.\n");
     return 0;

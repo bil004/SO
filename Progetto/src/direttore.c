@@ -65,8 +65,9 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
 }
 
 void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
+    pid_t* pid_array = malloc(sizeof(pid_t) * (shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1));
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!! Main in altro file, direttore chiamato con execl.., parametri passati nell'argv[] !!!!!!!!!!!!!!!!
-
+    int j = 0;
     //Puntatore a memoria condivisa
 
     //Creazione processi figli
@@ -84,7 +85,9 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             break;
             
         default:
-            //wait(&erogatore_ticket);
+            pid_array[j] = getpid();
+            j++;
+            break;
     }
 
     //-------------------Inizializzazione Sportelli---------------------
@@ -97,34 +100,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     }
     struct msgbuf message;
     msg_enqueue(shared_memory, msgId, &message);
-    /*
-    srand(time(NULL));
-    int msgId;
-    for(int i = 0; i< shared_memory->NOF_WORKER_SEATS; i++){
-        SportelloPtr sp = (SportelloPtr)malloc(sizeof(Sportello));
-        if(sp == NULL) {
-            perror("sportello non creato");
-            exit(0);
-        }
-        sp->tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
-        printf("Sportello %d che offre il servizio: %d \n", i, sp->tipoLavoro);
-
-        
-        //Creare la Coda di messaggi per i lavoratori
-        msgId = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
-        if (msgId == -1) {
-            perror("Errore coda di messaggi!");
-            exit(1);
-        }
-
-        struct msgbuf message;
-        message.mtype =  sp->tipoLavoro;
-        message.mtext = sp;
-        
-        //invio messaggio sulla coda
-        msgsnd(msgId, &message, sizeof(message.mtext), 0);
-
-    }*/
+    
 
     //-------------------Lavoratori-----------------
     for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
@@ -148,6 +124,10 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 break;
 
             default:
+                pid_array[j] = getpid();
+                j++;
+                break;
+            break;
 
         }
     }
@@ -168,7 +148,9 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 break;
 
             default:
-                // niente wait 
+                pid_array[j] = getpid();
+                j++;
+                break;
         }
     }
 
@@ -245,7 +227,6 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         semctl(semWaitInit, 8, SETVAL, 0); //reimposta il semaforo fine giornata a 0 (giornata finita)
 
         //cambio dei lavori sportelli
-
         shared_memory->DAYS_LEFT --;
         printf("Giorni rimanenti: %d\n", shared_memory->DAYS_LEFT);
         
@@ -261,7 +242,10 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         if(shared_memory->DAYS_LEFT == 0){
             puts("Giorni finiti, chiudo tutto");
-            semctl(semWaitInit, 8, SETVAL, 0);
+            // signal ia figli per interrompere attesa su nuovo giorno
+            for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
+                kill(pid_array[i], SIGUSR1);
+            }
             break;
         }
 
@@ -305,16 +289,6 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         perror("Errore nella deallocazione della coda di messaggi");
         exit(EXIT_FAILURE);
     }
-    // Deallocazione della mem condivisa
-    /*
-    int shmid = atoi(shmid_str);
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-        perror("Errore nella deallocazione della mem condivisa");
-        exit(EXIT_FAILURE);
-    }
-        */
-
-
 
     printf("direttore finito\n");
 
@@ -353,6 +327,10 @@ int main(int argc, char *argv[]) {
     direttore(argv[1], argv[2], shared_memory);
     // Simula la durata della giornata
     
+    if (shmdt(shared_memory) == -1) {
+        perror("shmdt error!");
+        exit(EXIT_FAILURE);
+    }
 
     //fine giorno n
 

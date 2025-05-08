@@ -11,7 +11,7 @@ SOURCES = main.c direttore.c erogatoreTicket.c operatore.c utente.c
 EXECUTABLES = $(SOURCES:%.c=$(BIN_DIR)/%)
 
 # Regola principale
-all: makedir $(EXECUTABLES)
+all: clean makedir $(EXECUTABLES)
 
 # Regola generica per compilare ogni file sorgente
 $(BIN_DIR)/%: $(SRC_DIR)/%.c

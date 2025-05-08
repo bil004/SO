@@ -11,21 +11,34 @@
 #include <sys/sem.h>
 #include <time.h>
 #include <sys/msg.h>
+#include <errno.h>
+#include <signal.h>
 
 #include "../include/config.h"
 
 #define NOF_PAUSE 4
+volatile sig_atomic_t terminate = 0;
 
-typedef struct sportello{
+typedef struct sportello
+{
     int tipoLavoro;
 } Sportello, *SportelloPtr;
 
-struct msgbuf {
+struct msgbuf
+{
     long mtype;
     SportelloPtr mtext;
 };
 
-void sem_op(int semid, int sem_num, int sem_op)
+void signal_handler(int sig)
+{
+    if (sig == SIGUSR1)
+    {
+        terminate = 1; // Imposta il flag per terminare il processo
+    }
+}
+
+int sem_op(int semid, int sem_num, int sem_op)
 {
     struct sembuf operazione;
     operazione.sem_num = sem_num; // Indice del semaforo nel set
@@ -34,22 +47,29 @@ void sem_op(int semid, int sem_num, int sem_op)
 
     if (semop(semid, &operazione, 1) == -1)
     {
-        perror("Errore nell'operazione sul semaforo");
+        if (errno == EINTR)
+        {
+            printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
+        }
+        perror("Errore nel semaforo");
         exit(EXIT_FAILURE);
     }
 }
 
-void cicloOperativo(int semLavoratore, int i){
-    
+void cicloOperativo(int semLavoratore, int i)
+{
+
     printf("Lavoratore %d sta lavorando\n", i);
-    while(1){
+    while (1)
+    {
         int valoreSemaforo = semctl(semLavoratore, 8, GETVAL);
-        if (valoreSemaforo == 0) {
+        if (valoreSemaforo == 0)
+        {
             // Semaforo impostato dal processo padre, termina il ciclo
             break;
         }
-        //fa un lavoro
-        //printf("ciao %d\n", i);
+        // fa un lavoro
+        // printf("ciao %d\n", i);
     }
     printf("Lavoratore %d ha finito di lavorare\n", i);
 }
@@ -65,10 +85,10 @@ int main(int argc, char *argv[])
     srand((unsigned)time(0));
 
     int semLavoratore = atoi(argv[1]);
-    int shmId = atoi(argv[2]); // ID della memoria condivisa passato come argomento
-    int i = atoi(argv[3]); // num lavoratore
-    int msgId = atoi(argv[4]); // id coda messaggi degli sportelli
-    int tipoLavoro = atoi(argv[5]); //tipo di lavoro che sa svolgere l'operatore
+    int shmId = atoi(argv[2]);      // ID della memoria condivisa passato come argomento
+    int i = atoi(argv[3]);          // num lavoratore
+    int msgId = atoi(argv[4]);      // id coda messaggi degli sportelli
+    int tipoLavoro = atoi(argv[5]); // tipo di lavoro che sa svolgere l'operatore
 
     // Attacca la memoria condivisa
     Config *shared_memory = (Config *)shmat(shmId, NULL, 0);
@@ -86,69 +106,75 @@ int main(int argc, char *argv[])
     // Attende la risposta del padre
     sem_op(semLavoratore, 6, -1);
 
-
-
     // -------------- CONTROLLO SE IL SEMAFORO GIORNATA è ATTIVO (SE LA GG è FINITA O NO) ---------------
 
     /*  while(1) finché non trova giornata finita
-        se operatore serve un user, quando finisce controlla il semaforo e, se indica che la gg è finita, 
+        se operatore serve un user, quando finisce controlla il semaforo e, se indica che la gg è finita,
         conta la gestione del ticket come "non effettuata" */
 
-    while(/*semctl(semLavoratore, 8, GETVAL) >= 1 && */shared_memory->DAYS_LEFT > 0) {
+    while (shared_memory->DAYS_LEFT > 0 && !terminate)
+    {
         puts("operatore Sleeping till day starts");
         sem_op(semLavoratore, 8, -1);
-        printf("Simulazione iniziata, lavoratore: %d tipoLavoro: %d\n", i, tipoLavoro);
 
+        if (terminate)
+        {
+            printf("Processo %d: Terminazione richiesta.\n", getpid());
+            break;
+        }
         struct msgbuf message;
         bool msgFound = false;
-        do{
-            if(msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, IPC_NOWAIT) == -1){
+        do
+        {
+            if (msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, IPC_NOWAIT) == -1)
+            {
                 msgFound = false;
-            }else{
+            }
+            else
+            {
                 msgFound = true;
             }
-        }while(!msgFound && semctl(semLavoratore, 8, GETVAL) >= 1);
-        //printf("Lavoratore %d preso Sportello per lavoro %d\n", i, tipoLavoro);
-        if(msgFound){
+        } while (!msgFound && semctl(semLavoratore, 8, GETVAL) >= 1);
+        // printf("Lavoratore %d preso Sportello per lavoro %d\n", i, tipoLavoro);
+        if (msgFound)
+        {
             cicloOperativo(semLavoratore, i);
-            //rilascio sportello
+            // rilascio sportello
             msgsnd(msgId, &message, sizeof(message.mtext), IPC_NOWAIT);
-            
-            //Da qui la giornata è finita sem 8 = 0;
 
-            //Aggiorna statistiche
+            // Da qui la giornata è finita sem 8 = 0;
+
+            // Aggiorna statistiche
         }
     }
 
+    /*
+        int pCount = 0;
+        // COLLEGAMENTO CON SPORTELLO
 
-
-/*
-    int pCount = 0;    
-    // COLLEGAMENTO CON SPORTELLO
-
-    // Simula il lavoro delle varie giornate
-    for (int j = 0; j < 8; j++)
-    {
-        sleep(1);
-
-        int boh = pCount;
-        if (pCount < NOF_PAUSE && rand() % 4 == 0)
+        // Simula il lavoro delle varie giornate
+        for (int j = 0; j < 8; j++)
         {
-            printf("Lavoratore %d sta facendo una pausa\n", i);
-
-            // Termina il servizio del cliente corrente
             sleep(1);
 
-            // Libera lo sportello
-            sem_op(semLavoratore, 3, 1);
-            printf("Lavoratore %d ha lasciato lo sportello per una pausa\n", i);
+            int boh = pCount;
+            if (pCount < NOF_PAUSE && rand() % 4 == 0)
+            {
+                printf("Lavoratore %d sta facendo una pausa\n", i);
 
-            // Attende prima di tornare a lavoro
-            sleep(2);
-            sem_op(semLavoratore, 3, -1);
-            printf("Lavoratore %d è tornato al lavoro\n", i);
-        }
-    }*/
+                // Termina il servizio del cliente corrente
+                sleep(1);
+
+                // Libera lo sportello
+                sem_op(semLavoratore, 3, 1);
+                printf("Lavoratore %d ha lasciato lo sportello per una pausa\n", i);
+
+                // Attende prima di tornare a lavoro
+                sleep(2);
+                sem_op(semLavoratore, 3, -1);
+                printf("Lavoratore %d è tornato al lavoro\n", i);
+            }
+        }*/
 
     // Detach shared memory
     if (shmdt(shared_memory) == -1)
@@ -159,10 +185,10 @@ int main(int argc, char *argv[])
 
     // printf("Running operatore %d\n", i);
 
+    puts("operatore finito");
+
     exit(0);
 }
-
-
 
 /*
 #define NOF_PAUSE 4

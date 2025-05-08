@@ -9,17 +9,30 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <time.h>
+#include <signal.h>
+#include <errno.h>
 
 #include "../include/config.h"
 
-void sem_op(int semid, int sem_num, int sem_op) {
+volatile sig_atomic_t terminate = 0;
+
+void signal_handler(int sig) {
+    if (sig == SIGUSR1) {
+        terminate = 1; // Imposta il flag per terminare il processo
+    }
+}
+
+int sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
     operazione.sem_num = sem_num; // Indice del semaforo nel set
     operazione.sem_op = sem_op;   // Operazione (incremento/decremento/attesa)
     operazione.sem_flg = 0;       // Nessuna flag
 
     if (semop(semid, &operazione, 1) == -1) {
-        perror("Errore nell'operazione sul semaforo");
+        if (errno == EINTR) {
+            printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
+        }
+        perror("Errore nel semaforo");
         exit(EXIT_FAILURE);
     }
 }
@@ -31,6 +44,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Incorrect number of arg\n");
         exit(1);
     }
+
+    signal(SIGUSR1, signal_handler);
 
     // Attacca la memoria condivisa
     
@@ -54,10 +69,14 @@ int main(int argc, char *argv[]) {
     //printf("Running utente %d\n", i);
 
     // -----------------------------------------------------------------------------
-    while(shared_memory->DAYS_LEFT > 0){
+    while (shared_memory->DAYS_LEFT > 0 && !terminate) {
         puts("utente Sleeping till day starts");
         sem_op(semUtente, 8, -1);
     
+        if (terminate) {
+            printf("Processo %d: Terminazione richiesta.\n", getpid());
+            break;
+        }
         // Probabilità della decisione dell'utente
         srand(time(NULL)^getpid());
         int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
@@ -113,6 +132,13 @@ int main(int argc, char *argv[]) {
 
     // -----------------------------------------------------------------------------
 
+    // Distacco della memoria condivisa
+    if (shmdt(shared_memory) == -1) {
+        perror("shmdt error!");
+        exit(EXIT_FAILURE);
+    }
+
+    puts("utente finito");
 
     exit(0);
 }
