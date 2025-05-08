@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 
     // -----------------------------------------------------------------------------
     while(shared_memory->DAYS_LEFT > 0){
+        puts("utente Sleeping till day starts");
         sem_op(semUtente, 8, -1);
     
         // Probabilità della decisione dell'utente

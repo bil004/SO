@@ -253,6 +253,12 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         if(shared_memory->DAYS_LEFT!=0)
             msg_enqueue(shared_memory, msgId, &message);
 
+        if(shared_memory->DAYS_LEFT == 0){
+            puts("Giorni finiti, chiudo tutto");
+            semctl(semWaitInit, 8, SETVAL, 0);
+            break;
+        }
+
         nanosleep((const struct timespec[]){0, 60 * 16 * shared_memory->N_NANO_SECS}, NULL);
         
 

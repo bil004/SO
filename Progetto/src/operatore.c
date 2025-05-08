@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
         conta la gestione del ticket come "non effettuata" */
 
     while(/*semctl(semLavoratore, 8, GETVAL) >= 1 && */shared_memory->DAYS_LEFT > 0) {
+        puts("operatore Sleeping till day starts");
         sem_op(semLavoratore, 8, -1);
         printf("Simulazione iniziata, lavoratore: %d tipoLavoro: %d\n", i, tipoLavoro);
 
