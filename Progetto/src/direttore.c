@@ -20,6 +20,15 @@ void errExit(char* s) {
     exit(EXIT_FAILURE);
 }
 
+void signal_handler(int sig)
+{
+    if (sig == SIGUSR1)
+    {
+        perror("Direttore Ucciso");
+        exit(EXIT_FAILURE); // Imposta il flag per terminare il processo
+    }
+}
+
 typedef struct sportello{
     int tipoLavoro;
 } Sportello, *SportelloPtr;
@@ -72,7 +81,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
     //Creazione processi figli
     //-----------------Erogatore Ticket------------------
-    switch(fork()) {
+    pid_t erogatoreTicket = fork();
+    switch(erogatoreTicket) {
         case -1:
             perror("erogatore_ticket not created!");
             exit(EXIT_FAILURE);
@@ -85,7 +95,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             break;
             
         default:
-            pid_array[j] = getpid();
+            pid_array[j] = erogatoreTicket;
             j++;
             break;
     }
@@ -104,7 +114,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
     //-------------------Lavoratori-----------------
     for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
-        switch(fork()) {
+        pid_t Lavoratore = fork();
+        switch(Lavoratore) {
             case -1:
                 errExit("operatore process error!");
                 break;
@@ -124,17 +135,17 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 break;
 
             default:
-                pid_array[j] = getpid();
+                pid_array[j] = Lavoratore;
                 j++;
                 break;
-            break;
 
         }
     }
 
     //-------------------Utenti------------------
     for(int i = 0; i < shared_memory->NOF_USERS; i++) {
-        switch(fork()) {
+        pid_t Utente = fork();
+        switch(Utente) {
             case -1:
                 errExit("utente process error!");
                 break;
@@ -148,7 +159,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 break;
 
             default:
-                pid_array[j] = getpid();
+                pid_array[j] = Utente;
                 j++;
                 break;
         }
@@ -227,7 +238,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         semctl(semWaitInit, 8, SETVAL, 0); //reimposta il semaforo fine giornata a 0 (giornata finita)
 
         //cambio dei lavori sportelli
-        shared_memory->DAYS_LEFT --;
+        shared_memory->DAYS_LEFT--;
         printf("Giorni rimanenti: %d\n", shared_memory->DAYS_LEFT);
         
         puts("Fine giornata.");
@@ -240,12 +251,17 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         if(shared_memory->DAYS_LEFT!=0)
             msg_enqueue(shared_memory, msgId, &message);
 
+        for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++)
+        {
+            printf("PID %d\n", pid_array[i]);
+        }
+        
+
         if(shared_memory->DAYS_LEFT == 0){
             puts("Giorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno
             for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
                 if (kill(pid_array[i], 0) == 0) {
-                    printf("Invio segnale a PID: %d\n", pid_array[i]);
                     if (kill(pid_array[i], SIGUSR1) == -1) {
                         perror("Errore nell'invio del segnale");
                     }
@@ -274,7 +290,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     }
 
 
-    /*while (1) {
+    while (1) {
         pid_t pid = waitpid(-1, NULL, 0); // Aspetta qualunque figlio
         if (pid == -1) {
             if (errno == ECHILD) {
@@ -288,9 +304,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         } else {
             //printf("Figlio terminato, PID: %d\n", pid);
         }
-    }*/
-
-    puts("vorp?");
+    }
+    
     // Deallocazione della coda di messaggi
     if (msgctl(msgId, IPC_RMID, NULL) == -1) {
         perror("Errore nella deallocazione della coda di messaggi");
@@ -307,6 +322,9 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Incorrect number of arg\n");
         exit(1);
     }
+
+    signal(SIGUSR1, signal_handler);
+
     /*
     argv1 semafori Inizializzazione
     argv2 shared memory

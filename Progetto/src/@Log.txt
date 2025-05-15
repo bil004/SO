@@ -56,3 +56,6 @@
     -fixato e defixato fine simulazione
     -aggiunto messaggi di debug e la kill()
     -correggere la chiusura dei processi e la rimozione dei semafori (DA FARE)
+
+15/05
+    -risolta terminazione corretta dei processi

@@ -32,8 +32,10 @@ int sem_op(int semid, int sem_num, int sem_op) {
         if (errno == EINTR) {
             printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
         }
-        perror("Errore nel semaforo");
-        exit(EXIT_FAILURE);
+        else{
+            perror("Errore nel semaforo");
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -138,7 +140,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    puts("utente finito");
+    printf("utente %d finito\n", getpid());
 
     exit(0);
 }

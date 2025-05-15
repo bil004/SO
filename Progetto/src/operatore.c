@@ -51,10 +51,11 @@ int sem_op(int semid, int sem_num, int sem_op)
         {
             printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
         }
-        perror("Errore nel semaforo");
-        exit(EXIT_FAILURE);
+        else{
+            perror("Errore nel semaforo: ");
+            exit(EXIT_FAILURE);
+        }
     }
-    puts("END_SEM_OP");
 }
 
 void cicloOperativo(int semLavoratore, int i)
@@ -82,6 +83,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Incorrect number of arg\n");
         exit(1);
     }
+
+    signal(SIGUSR1, signal_handler);
 
     srand((unsigned)time(0));
 
@@ -186,7 +189,7 @@ int main(int argc, char *argv[])
 
     // printf("Running operatore %d\n", i);
 
-    puts("operatore finito");
+    printf("operatore %d finito\n", getpid());
 
     exit(0);
 }
