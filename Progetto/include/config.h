@@ -1,5 +1,5 @@
-#ifndef MACRO_H
-#define MACRO_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
 typedef struct Config {
     int NOF_WORKER_SEATS;
@@ -13,6 +13,7 @@ typedef struct Config {
     int TIME_SERVICE;
     int P_SERV_MIN;
     int P_SERV_MAX;
+    int *sportelli;
 } Config;
 
 #endif
