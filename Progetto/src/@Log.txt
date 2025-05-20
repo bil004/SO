@@ -67,4 +67,5 @@
 TO DO-->
     - iniziare erogatoreTicket.c (la parte in cui viene erogato il servizio con il relativo tempo di "blocco")
     - Sistemare bene ed evitare il busy waiting in operatore (fatto ma sistemare ancora)
+    - Sistemare la chiusura corretta dei processi (bomboclat)
     - Studiare MDAG xké ho l'esame 🥹
