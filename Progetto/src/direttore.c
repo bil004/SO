@@ -61,6 +61,8 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
             exit(0);
         }
         sp->tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
+        shared_memory->sportelli[i] = sp->tipoLavoro;
+        
         printf("Sportello %d che offre il servizio: %d \n", i, sp->tipoLavoro);
 
         
@@ -151,7 +153,6 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 break;
             
             case 0:
-                //printf("sono User %d!\n", i);
                 char I[64];
                 sprintf(I, "%d", i);
                 execl("./utente", "./utente", semWaitInit_str, shmid_str, I, NULL);
@@ -183,38 +184,13 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         sem_op(semWaitInit, 2, -1);
     }
     printf("Inizializzazione LAVORATORI Terminata\n");
-    
 
-
-    //-------------Avvio simulazione
-/*
-    // Simula la durata della giornata
-    int semid = atoi(semid_str);
-    for (int giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
-        printf("[Direttore] Giorno %d iniziato.\n", giorno + 1);
-        nanosleep((const struct timespec[]){{0, 60 * 24 * shared_memory->N_NANO_SECS}}, NULL);
-
-        // Aggiorna statistiche giornaliere
-        sem_wait(semid, 6);
-        printf("[Direttore] Statistiche al termine del giorno %d:\n", giorno + 1);
-        for (int i = 0; i < 6; i++) {
-            //Scrittura di tutte le statistiche aggiornatae
-        }
-        sem_signal(semid, 6);
-    }
-*/
-
-    
-    //puts("avvio sessione"); 
-    
-    
-
-    puts("sessione iniziata");
+    puts("\nsessione iniziata");
     
     // creare un semaforo mutex giornata attiva
     for (int giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
         // aggiorna il semaforo per indicare che la giornata è iniziata e waita
-        printf("[Direttore] Giorno %d iniziato.\n", giorno + 1);
+        printf("\n[Direttore] Giorno %d iniziato.\n", giorno + 1);
         
         semctl(semWaitInit, 8, SETVAL, 1+ shared_memory->NOF_WORKERS + shared_memory->NOF_USERS); //reimposta il semaforo fine giornata a 1 (giornata non finita)
 
@@ -251,14 +227,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         if(shared_memory->DAYS_LEFT!=0)
             msg_enqueue(shared_memory, msgId, &message);
 
-        for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++)
-        {
-            printf("PID %d\n", pid_array[i]);
-        }
-        
-
         if(shared_memory->DAYS_LEFT == 0){
-            puts("Giorni finiti, chiudo tutto");
+            puts("\nGiorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno
             for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
                 if (kill(pid_array[i], 0) == 0) {
@@ -272,8 +242,6 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         }
 
         nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
-        
-
 
         // direttore aspetta segnale semaforo da operatore di concluso servizio ultimo utente
         // Quando riceve segnale, dice all'operatore di smettere di servire altri utenti
@@ -312,7 +280,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         exit(EXIT_FAILURE);
     }
 
-    printf("direttore finito\n");
+    puts("direttore finito\n");
 
 
 }

@@ -19,38 +19,30 @@
 #define NOF_PAUSE 4
 volatile sig_atomic_t terminate = 0;
 
-typedef struct sportello
-{
+typedef struct sportello {
     int tipoLavoro;
 } Sportello, *SportelloPtr;
 
-struct msgbuf
-{
+struct msgbuf {
     long mtype;
     SportelloPtr mtext;
 };
 
-void signal_handler(int sig)
-{
-    if (sig == SIGUSR1)
-    {
+void signal_handler(int sig) {
+    if (sig == SIGUSR1) {
         terminate = 1; // Imposta il flag per terminare il processo
     }
 }
 
-int sem_op(int semid, int sem_num, int sem_op)
-{
+int sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
     operazione.sem_num = sem_num; // Indice del semaforo nel set
     operazione.sem_op = sem_op;   // Operazione (incremento/decremento/attesa)
     operazione.sem_flg = 0;       // Nessuna flag
 
-    if (semop(semid, &operazione, 1) == -1)
-    {
+    if (semop(semid, &operazione, 1) == -1) {
         if (errno == EINTR)
-        {
             printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
-        }
         else{
             perror("Errore nel semaforo: ");
             exit(EXIT_FAILURE);
@@ -58,15 +50,12 @@ int sem_op(int semid, int sem_num, int sem_op)
     }
 }
 
-void cicloOperativo(int semLavoratore, int i)
-{
+void cicloOperativo(int semLavoratore, int i) {
 
     printf("Lavoratore %d sta lavorando\n", i);
-    while (1)
-    {
+    while (1) {
         int valoreSemaforo = semctl(semLavoratore, 8, GETVAL);
-        if (valoreSemaforo == 0)
-        {
+        if (valoreSemaforo == 0){
             // Semaforo impostato dal processo padre, termina il ciclo
             break;
         }
@@ -116,73 +105,32 @@ int main(int argc, char *argv[])
         se operatore serve un user, quando finisce controlla il semaforo e, se indica che la gg è finita,
         conta la gestione del ticket come "non effettuata" */
 
-    while (shared_memory->DAYS_LEFT > 0 && !terminate)
-    {
+    while (shared_memory->DAYS_LEFT > 0 && !terminate) {
         puts("operatore Sleeping till day starts");
         sem_op(semLavoratore, 8, -1);
 
-        if (terminate)
-        {
+        if (terminate) {
             printf("Processo %d: Terminazione richiesta.\n", getpid());
             break;
         }
         struct msgbuf message;
-        bool msgFound = false;
-        do
-        {
-            if (msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, IPC_NOWAIT) == -1)
-            {
-                msgFound = false;
+        ssize_t ret = msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, 0);
+        if (ret == -1) {
+            if (errno == EINTR && terminate) {
+                printf("Processo %d: msgrcv interrotto da segnale.\n", getpid());
+                break;
             }
-            else
-            {
-                msgFound = true;
-            }
-        } while (!msgFound && semctl(semLavoratore, 8, GETVAL) >= 1);
-        // printf("Lavoratore %d preso Sportello per lavoro %d\n", i, tipoLavoro);
-        if (msgFound)
-        {
-            cicloOperativo(semLavoratore, i);
-            // rilascio sportello
-            msgsnd(msgId, &message, sizeof(message.mtext), IPC_NOWAIT);
-
-            // Da qui la giornata è finita sem 8 = 0;
-
-            // Aggiorna statistiche
+            // gestisci altri errori se necessario
+            continue;
         }
+        // Messaggio ricevuto, lavora
+        cicloOperativo(semLavoratore, i);
+        msgsnd(msgId, &message, sizeof(message.mtext), 0);
+        // Aggiorna statistiche
     }
 
-    /*
-        int pCount = 0;
-        // COLLEGAMENTO CON SPORTELLO
-
-        // Simula il lavoro delle varie giornate
-        for (int j = 0; j < 8; j++)
-        {
-            sleep(1);
-
-            int boh = pCount;
-            if (pCount < NOF_PAUSE && rand() % 4 == 0)
-            {
-                printf("Lavoratore %d sta facendo una pausa\n", i);
-
-                // Termina il servizio del cliente corrente
-                sleep(1);
-
-                // Libera lo sportello
-                sem_op(semLavoratore, 3, 1);
-                printf("Lavoratore %d ha lasciato lo sportello per una pausa\n", i);
-
-                // Attende prima di tornare a lavoro
-                sleep(2);
-                sem_op(semLavoratore, 3, -1);
-                printf("Lavoratore %d è tornato al lavoro\n", i);
-            }
-        }*/
-
     // Detach shared memory
-    if (shmdt(shared_memory) == -1)
-    {
+    if (shmdt(shared_memory) == -1) {
         perror("shmdt error!");
         exit(EXIT_FAILURE);
     }
@@ -193,56 +141,3 @@ int main(int argc, char *argv[])
 
     exit(0);
 }
-
-/*
-#define NOF_PAUSE 4
-
-int main(int argc, char *argv[]) {
-    while (1) {
-        // Compete per uno sportello libero
-        sem_op(semLavoratore, 3, -1); // Decrementa il semaforo degli sportelli liberi
-        printf("Lavoratore %d ha occupato uno sportello\n", i);
-
-        // Simula il lavoro fino alla fine della giornata
-        for (int j = 0; j < 8; j++) { // Simula 8 ore lavorative
-            sleep(1); // Simula un'ora di lavoro
-
-            // Decide casualmente se fare una pausa
-            if (pause_count < NOF_PAUSE && rand() % 4 == 0) {
-                printf("Lavoratore %d sta facendo una pausa\n", i);
-                pause_count++;
-
-                // Termina il servizio del cliente corrente
-                sleep(1); // Simula il completamento del servizio
-
-                // Libera lo sportello
-                sem_op(semLavoratore, 3, 1); // Incrementa il semaforo degli sportelli liberi
-                printf("Lavoratore %d ha lasciato lo sportello per una pausa\n", i);
-
-                // Aggiorna le statistiche (simulato)
-                shared_data[i]++; // Aggiorna una statistica fittizia
-
-                // Attende prima di tornare al lavoro
-                sleep(2);
-                sem_op(semLavoratore, 3, -1); // Occupa di nuovo uno sportello
-                printf("Lavoratore %d è tornato al lavoro\n", i);
-            }
-        }
-
-        // Fine giornata lavorativa
-        printf("Lavoratore %d termina la giornata\n", i);
-
-        // Libera lo sportello
-        sem_op(semLavoratore, 3, 1); // Incrementa il semaforo degli sportelli liberi
-        break;
-    }
-
-    // Distacca la memoria condivisa
-    if (shmdt(shared_data) == -1) {
-        perror("shmdt error!");
-        exit(EXIT_FAILURE);
-    }
-
-    exit(0);
-}
-*/

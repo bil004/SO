@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -49,8 +50,8 @@ int main(int argc, char *argv[]) {
 
     signal(SIGUSR1, signal_handler);
 
-    // Attacca la memoria condivisa
     
+    // Attacca la memoria condivisa
     int shmId = atoi(argv[2]);
     Config *shared_memory = (Config *)shmat(shmId, NULL, 0);
     if (shared_memory == (Config *)-1) {
@@ -83,47 +84,58 @@ int main(int argc, char *argv[]) {
         srand(time(NULL)^getpid());
         int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
         int P_SERV = (rand() % intervallo) + shared_memory->P_SERV_MIN;
-
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
         if(P_SERV <= fail) {
-            puts("Vai alla posta");
+            int service = rand() % 6;
+            printf("Ricerca dello sportello per %d da parte di %d...\n", service, getpid());
+            bool found = false;
             
-            switch (rand() % 6) {
-                case 0:
-                    printf("USER %d: Invio e ritiro pacchi\n", getpid());
+            for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
+                if (shared_memory->sportelli[i] == service) {
+                    found = true;
                     break;
-                
-                case 1:
-                    printf("USER %d: Invio e lettere e raccomandate\n", getpid());
-                    break;
-                
-                case 2:
-                    printf("USER %d: Prelievi e versamenti Bancoposta\n", getpid());
-                    break;
-                
-                case 3:
-                    printf("USER %d: Pagamento bollettini postali\n", getpid());
-                    break;
-                
-                case 4:
-                    printf("USER %d: Acquisto prodotti finanziari\n", getpid());
-                    break;
-                
-                case 5:
-                    printf("USER %d: Acquisto orologi e braccialetti\n", getpid());
-                    break;
-                
-                default:
-                    puts("Error");
-                    break;
+                }
             }
-
-            int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
-            nanosleep((const struct timespec[]){{0, orario}}, NULL);
-            //Controllo posta aperta
-            //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
             
+            if (found) {
+                puts("Vai alla posta");
+                switch (service) {
+                    case 0:
+                        printf("USER %d: Invio e ritiro pacchi\n", getpid());
+                        break;
+                    
+                    case 1:
+                        printf("USER %d: Invio e lettere e raccomandate\n", getpid());
+                        break;
+                    
+                    case 2:
+                        printf("USER %d: Prelievi e versamenti Bancoposta\n", getpid());
+                        break;
+                    
+                    case 3:
+                        printf("USER %d: Pagamento bollettini postali\n", getpid());
+                        break;
+                    
+                    case 4:
+                        printf("USER %d: Acquisto prodotti finanziari\n", getpid());
+                        break;
+                    
+                    case 5:
+                        printf("USER %d: Acquisto orologi e braccialetti\n", getpid());
+                        break;
+                    
+                    default:
+                        puts("Error");
+                        break;
+                }
+
+                int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
+                nanosleep((const struct timespec[]){{0, orario}}, NULL);
+                //Controllo posta aperta
+                //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
+            }
+            else puts("Non vai alla posta (servizio non disponibile)");
         }
         else puts("Non vai alla posta");
 

@@ -59,3 +59,12 @@
 
 15/05
     -risolta terminazione corretta dei processi
+
+20/05
+    - Creato array sportelli in shared_memory (cosi abbiamo gli sportelli salvati)
+    - Pulizia stampa
+
+TO DO-->
+    - iniziare erogatoreTicket.c (la parte in cui viene erogato il servizio con il relativo tempo di "blocco")
+    - Sistemare bene ed evitare il busy waiting in operatore (fatto ma sistemare ancora)
+    - Studiare MDAG xké ho l'esame 🥹
