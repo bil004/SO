@@ -61,8 +61,8 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
             exit(0);
         }
         sp->tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
-        shared_memory->sportelli[i] = sp->tipoLavoro;
         printf("Sportello %d che offre il servizio: %d \n", i, sp->tipoLavoro);
+
         
         message->mtype =  sp->tipoLavoro;
         message->mtext = sp;
@@ -101,8 +101,6 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     }
 
     //-------------------Inizializzazione Sportelli---------------------
-
-    shared_memory->sportelli = malloc(sizeof(int)*shared_memory->NOF_WORKER_SEATS);
 
     //Creare la Coda di messaggi per i lavoratori
     int msgId = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
@@ -249,11 +247,6 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         int result;
         while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {
         }
-
-        for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
-            shared_memory->sportelli[i] = 0;
-        }
-
         //riempio coda nuovamente
         if(shared_memory->DAYS_LEFT!=0)
             msg_enqueue(shared_memory, msgId, &message);

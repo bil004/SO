@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -71,7 +70,7 @@ int main(int argc, char *argv[]) {
     
     //printf("Running utente %d\n", i);
 
-    // ----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
     while (shared_memory->DAYS_LEFT > 0 && !terminate) {
         puts("utente Sleeping till day starts");
         sem_op(semUtente, 8, -1);
@@ -86,57 +85,44 @@ int main(int argc, char *argv[]) {
         int P_SERV = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
-        printf("PS EYJYJUNHYHBYJBYTBJNYHBJYBYHNJNUASS   %d\n",P_SERV);
-        if(P_SERV <= fail) {
-            puts("RICERCA DEL DAMN SPORTELLO ADATTO CAZZO!!!!!!");
-            int service = rand() % 6;
-            bool found = false;
-            for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
-                if (shared_memory->sportelli[i] == service) {
-                    found = true;
-                    break;
-                }
-            }
-            
-            puts("Vai alla posta");
-            if (found) {
-                switch (service) {
-                    case 0:
-                        printf("USER %d: Invio e ritiro pacchi\n", getpid());
-                        break;
-                    
-                    case 1:
-                        printf("USER %d: Invio e lettere e raccomandate\n", getpid());
-                        break;
-                    
-                    case 2:
-                        printf("USER %d: Prelievi e versamenti Bancoposta\n", getpid());
-                        break;
-                    
-                    case 3:
-                        printf("USER %d: Pagamento bollettini postali\n", getpid());
-                        break;
-                    
-                    case 4:
-                        printf("USER %d: Acquisto prodotti finanziari\n", getpid());
-                        break;
-                    
-                    case 5:
-                        printf("USER %d: Acquisto orologi e braccialetti\n", getpid());
-                        break;
-                    
-                    default:
-                        puts("Error");
-                        break;
-                }
 
-                int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
-                nanosleep((const struct timespec[]){{0, orario}}, NULL);
-                //Controllo posta aperta
-                //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
+        if(P_SERV <= fail) {
+            puts("Vai alla posta");
+            
+            switch (rand() % 6) {
+                case 0:
+                    printf("USER %d: Invio e ritiro pacchi\n", getpid());
+                    break;
                 
+                case 1:
+                    printf("USER %d: Invio e lettere e raccomandate\n", getpid());
+                    break;
+                
+                case 2:
+                    printf("USER %d: Prelievi e versamenti Bancoposta\n", getpid());
+                    break;
+                
+                case 3:
+                    printf("USER %d: Pagamento bollettini postali\n", getpid());
+                    break;
+                
+                case 4:
+                    printf("USER %d: Acquisto prodotti finanziari\n", getpid());
+                    break;
+                
+                case 5:
+                    printf("USER %d: Acquisto orologi e braccialetti\n", getpid());
+                    break;
+                
+                default:
+                    puts("Error");
+                    break;
             }
-            else puts("Sportello non disponibile!");
+
+            int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
+            nanosleep((const struct timespec[]){{0, orario}}, NULL);
+            //Controllo posta aperta
+            //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
             
         }
         else puts("Non vai alla posta");
@@ -147,8 +133,6 @@ int main(int argc, char *argv[]) {
     }
 
     // -----------------------------------------------------------------------------
-
-
 
     // Distacco della memoria condivisa
     if (shmdt(shared_memory) == -1) {
