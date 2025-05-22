@@ -12,8 +12,17 @@
 #include <time.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/msg.h>
 
 #include "../include/config.h"
+#include "../include/operatore.h"
+
+typedef struct ticket_msg {
+    long mtype;      // Tipo messaggio: 1 per richiesta, PID utente per risposta
+    int servizio;    // Tipo di servizio richiesto
+    int ticket;      // Numero del ticket (solo nella risposta)
+    pid_t pid;       // PID dell'utente (solo nella richiesta)
+} TicketMsg;
 
 volatile sig_atomic_t terminate = 0;
 
@@ -86,8 +95,28 @@ int main(int argc, char *argv[]) {
         int P_SERV = (rand() % intervallo) + shared_memory->P_SERV_MIN;
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
+        
         if(P_SERV <= fail) {
             int service = rand() % 6;
+            puts("Decisione User va in posta?!?!?");
+            // esegue erogatoreTicket
+            // nello switch utilizzerà il tempiario[] disponibile in erogatore_ticket
+            
+            key_t msgkey = ftok("/tmp", 'U');
+            int msgid = msgget(msgkey, 0666 | IPC_CREAT);
+            
+            // Invio della richiesta
+            TicketMsg req = {1, service, 0, getpid()};
+            msgsnd(msgid, &req, sizeof(TicketMsg) - sizeof(long), 0);
+            puts("message send");
+
+
+            // Ricezione della richiesta
+            TicketMsg response;
+            msgrcv(msgid, &response, sizeof(TicketMsg) - sizeof(long), getpid(), 0);
+            printf("User %d ha ricevuto il ticket %d\n", getpid(), response.ticket);
+
+            // Ricerca sportello            
             printf("Ricerca dello sportello per %d da parte di %d...\n", service, getpid());
             bool found = false;
             
@@ -103,6 +132,7 @@ int main(int argc, char *argv[]) {
                 switch (service) {
                     case 0:
                         printf("USER %d: Invio e ritiro pacchi\n", getpid());
+                        // sleep(tempiario[service]);
                         break;
                     
                     case 1:
@@ -141,7 +171,6 @@ int main(int argc, char *argv[]) {
 
         sem_op(semUtente, 8, 0);
         //Aggiorna statistiche
-
     }
 
     // -----------------------------------------------------------------------------

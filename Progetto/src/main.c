@@ -33,10 +33,6 @@ void load_config(const char *filename, Config *config) {
                 config->SIM_DURATION = value;
             } else if (strcmp(key, "N_NANO_SECS") == 0) {
                 config->N_NANO_SECS = value;
-            } else if (strcmp(key, "SERVICE") == 0) {
-                config->SERVICE = value;
-            } else if (strcmp(key, "TIME_SERVICE") == 0) {
-                config->TIME_SERVICE = value;
             }
         }
     }

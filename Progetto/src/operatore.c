@@ -105,11 +105,13 @@ int main(int argc, char *argv[])
         se operatore serve un user, quando finisce controlla il semaforo e, se indica che la gg è finita,
         conta la gestione del ticket come "non effettuata" */
 
-    while (shared_memory->DAYS_LEFT > 0 && !terminate) {
+    while (!terminate) {
         puts("operatore Sleeping till day starts");
         sem_op(semLavoratore, 8, -1);
 
-        if (terminate) {
+        printf("DEBUG: Operatore %d, DAYS_LEFT=%d, terminate=%d\n", getpid(), shared_memory->DAYS_LEFT, terminate);
+
+        if (terminate || shared_memory->DAYS_LEFT <= 0) {
             printf("Processo %d: Terminazione richiesta.\n", getpid());
             break;
         }

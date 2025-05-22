@@ -70,7 +70,7 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
         message->mtext = sp;
         
         //invio messaggio sulla coda
-        msgsnd(msgId, &message, sizeof(message->mtext), 0);
+        msgsnd(msgId, &message, sizeof(message->mtext) - sizeof(long), 0);
 
     }
 }
