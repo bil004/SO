@@ -74,4 +74,5 @@ TO DO-->
     - Sistemare bene ed evitare il busy waiting in operatore (fatto ma sistemare ancora)
     - Collegamento tramite code tra utente e operatori
     - Sistemare la parte del tempo secondo tempiario
+    - Sistemare la chiusura dei processi (è quel bastardone di operatore "i think")
     - Studiare MDAG xké ho l'esame 🥹
