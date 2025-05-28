@@ -69,10 +69,12 @@
     - Scritto e Fatto erogatoreTicket.c
     - Collegato tramite code erogatore e utenti
 
+
+28/05
+    - Scritto e fatto operatore.c su più giorni (manca solo la gestione delle NOF_PAUSE e il ricevimento degli utenti [tempiario])
+    - Sistemato la chiusura di tutti i processi (era colpa di operatore.c che rimaneva sempre in attesa di msgrcv)
+
 TO DO-->
-    - Sistemare in operatore.c la gestione su più giorni
-    - Sistemare bene ed evitare il busy waiting in operatore (fatto ma sistemare ancora)
-    - Collegamento tramite code tra utente e operatori
+    - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
     - Sistemare la parte del tempo secondo tempiario
-    - Sistemare la chiusura dei processi (è quel bastardone di operatore "i think")
     - Studiare MDAG xké ho l'esame 🥹

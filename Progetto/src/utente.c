@@ -98,7 +98,6 @@ int main(int argc, char *argv[]) {
         
         if(P_SERV <= fail) {
             int service = rand() % 6;
-            puts("Decisione User va in posta?!?!?");
             // esegue erogatoreTicket
             // nello switch utilizzerà il tempiario[] disponibile in erogatore_ticket
             

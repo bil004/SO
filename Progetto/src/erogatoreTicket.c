@@ -13,7 +13,6 @@
 #include <sys/msg.h>
 
 #include "../include/config.h"
-//#include "../include/erogatore_ticket.h"
 
 typedef struct ticket_msg {
     long mtype;      // Tipo messaggio: 1 per richiesta, PID utente per risposta

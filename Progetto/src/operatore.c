@@ -18,6 +18,7 @@
 
 #define NOF_PAUSE 4
 volatile sig_atomic_t terminate = 0;
+volatile sig_atomic_t nextDay = 0;
 
 typedef struct sportello {
     int tipoLavoro;
@@ -31,6 +32,9 @@ struct msgbuf {
 void signal_handler(int sig) {
     if (sig == SIGUSR1) {
         terminate = 1; // Imposta il flag per terminare il processo
+    }
+    if (sig == SIGUSR2){
+        nextDay = 1;
     }
 }
 
@@ -65,15 +69,14 @@ void cicloOperativo(int semLavoratore, int i) {
     printf("Lavoratore %d ha finito di lavorare\n", i);
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc != 6)
-    {
+int main(int argc, char *argv[]) {
+    if (argc != 6) {
         fprintf(stderr, "Incorrect number of arg\n");
         exit(1);
     }
 
     signal(SIGUSR1, signal_handler);
+    signal(SIGUSR2, signal_handler);
 
     srand((unsigned)time(0));
 
@@ -106,23 +109,33 @@ int main(int argc, char *argv[])
         conta la gestione del ticket come "non effettuata" */
 
     while (!terminate) {
-        puts("operatore Sleeping till day starts");
+        puts("Operatore Sleeping till day starts");
         sem_op(semLavoratore, 8, -1);
 
-        printf("DEBUG: Operatore %d, DAYS_LEFT=%d, terminate=%d\n", getpid(), shared_memory->DAYS_LEFT, terminate);
+        // Stampa debug ogni giorno, anche se non trova sportello
+        printf("DEBUG: Operatore %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\n", getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
 
         if (terminate || shared_memory->DAYS_LEFT <= 0) {
             printf("Processo %d: Terminazione richiesta.\n", getpid());
             break;
         }
         struct msgbuf message;
-        ssize_t ret = msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, 0);
+        int ret = msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, 0);
         if (ret == -1) {
+            if (errno == ENOMSG) {
+                // Nessuno sportello disponibile per questo operatore oggi
+                printf("Operatore %d: Nessuno sportello disponibile oggi per tipoLavoro=%d\n", getpid(), tipoLavoro);
+                continue;
+            }
             if (errno == EINTR && terminate) {
                 printf("Processo %d: msgrcv interrotto da segnale.\n", getpid());
                 break;
             }
-            // gestisci altri errori se necessario
+            if (errno == EINTR && nextDay) {
+                printf("Processo %d: msgrcv interrotto. Si passa al gg successivo.\n", getpid());
+                nextDay = 0;
+            }
+            
             continue;
         }
         // Messaggio ricevuto, lavora
@@ -136,8 +149,6 @@ int main(int argc, char *argv[])
         perror("shmdt error!");
         exit(EXIT_FAILURE);
     }
-
-    // printf("Running operatore %d\n", i);
 
     printf("operatore %d finito\n", getpid());
 

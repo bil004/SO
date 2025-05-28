@@ -114,7 +114,10 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     msg_enqueue(shared_memory, msgId, &message);
     
 
-    //-------------------Lavoratori-----------------
+    //-------------------Operatori-----------------
+    pid_t* opPid = malloc(sizeof(pid_t) * (shared_memory->NOF_WORKERS));
+
+    int k = 0;
     for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
         pid_t Lavoratore = fork();
         switch(Lavoratore) {
@@ -138,6 +141,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
             default:
                 pid_array[j] = Lavoratore;
+                opPid[k] = Lavoratore;
+                k++;
                 j++;
                 break;
 
@@ -224,9 +229,17 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {
         }
         //riempio coda nuovamente
-        if(shared_memory->DAYS_LEFT!=0)
+        if(shared_memory->DAYS_LEFT!=0) {
+            for (int i = 0; i < shared_memory->NOF_WORKERS; i++) {
+                if (kill(opPid[i], 0) == 0) {
+                    if (kill(opPid[i], SIGUSR2) == -1) {
+                        perror("errore invio segnale");
+                    }
+                    else printf("Operatore segnale uscita coda a PID: %d\n", opPid[i]);
+                }
+            }
             msg_enqueue(shared_memory, msgId, &message);
-
+        }
         if(shared_memory->DAYS_LEFT == 0){
             puts("\nGiorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno
@@ -235,7 +248,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                     if (kill(pid_array[i], SIGUSR1) == -1) {
                         perror("Errore nell'invio del segnale");
                     }
-                    printf("Segnale inviato a PID: %d\n", pid_array[i]);
+                    else printf("Segnale inviato a PID: %d\n", pid_array[i]);
                 } 
             }
             break;
