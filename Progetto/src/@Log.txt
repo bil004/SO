@@ -74,7 +74,12 @@
     - Scritto e fatto operatore.c su più giorni (manca solo la gestione delle NOF_PAUSE e il ricevimento degli utenti [tempiario])
     - Sistemato la chiusura di tutti i processi (era colpa di operatore.c che rimaneva sempre in attesa di msgrcv)
 
+
+29/05
+    - Iniziato connessione tra operatore e utente (da finire)
+    - Sistemato some issues
+
 TO DO-->
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
-    - Sistemare la parte del tempo secondo tempiario
+    - Sistemare connessione User-Worker
     - Studiare MDAG xké ho l'esame 🥹

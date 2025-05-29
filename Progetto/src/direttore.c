@@ -51,7 +51,6 @@ void sem_op(int semid, int sem_num, int sem_op) {
 }
 
 void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
-    
     srand(time(NULL));
     
     for(int i = 0; i< shared_memory->NOF_WORKER_SEATS; i++){
@@ -116,6 +115,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
     //-------------------Operatori-----------------
     pid_t* opPid = malloc(sizeof(pid_t) * (shared_memory->NOF_WORKERS));
+    char tipiWorkers[64];
 
     int k = 0;
     for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
@@ -133,6 +133,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 sprintf(I, "%d", i);
                 sprintf(msgId_str, "%d", msgId);
                 int tipolavoro = (rand() % 6) + 1;
+                shared_memory->lavoratori[k] = tipolavoro - 1;
                 char tipoLavoro_str[64];
                 sprintf(tipoLavoro_str, "%d", tipolavoro);
                 execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);

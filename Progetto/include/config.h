@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #define MAX_SPORTELLI 32
+#define MAX_LAVORATORI 64
 
 typedef struct Config {
     int NOF_WORKER_SEATS;
@@ -16,6 +17,7 @@ typedef struct Config {
     int P_SERV_MIN;
     int P_SERV_MAX;
     int sportelli[MAX_SPORTELLI];
+    int lavoratori[MAX_LAVORATORI];
 } Config;
 
 #endif

@@ -24,6 +24,11 @@ typedef struct ticket_msg {
     pid_t pid;       // PID dell'utente (solo nella richiesta)
 } TicketMsg;
 
+typedef struct worker_msg {
+    long mtype;      // Tipo messaggio: service per richiesta, PID utente per risposta
+    pid_t pid;       // PID dell'utente (solo nella richiesta)
+} WorkerMsg;
+
 volatile sig_atomic_t terminate = 0;
 
 void signal_handler(int sig) {
@@ -98,36 +103,45 @@ int main(int argc, char *argv[]) {
         
         if(P_SERV <= fail) {
             int service = rand() % 6;
-            // esegue erogatoreTicket
-            // nello switch utilizzerà il tempiario[] disponibile in erogatore_ticket
             
-            key_t msgkey = ftok("/tmp", 'U');
-            int msgid = msgget(msgkey, 0666 | IPC_CREAT);
-            
-            // Invio della richiesta
-            TicketMsg req = {1, service, 0, getpid()};
-            msgsnd(msgid, &req, sizeof(TicketMsg) - sizeof(long), 0);
-            puts("message send");
-
-
-            // Ricezione della richiesta
-            TicketMsg response;
-            msgrcv(msgid, &response, sizeof(TicketMsg) - sizeof(long), getpid(), 0);
-            printf("User %d ha ricevuto il ticket %d\n", getpid(), response.ticket);
-
-            // Ricerca sportello            
+            // Controlla se gli sportelli per il suo tipo di op. sono aperti, e se esiste un worker con quel lavoro        
             printf("Ricerca dello sportello per %d da parte di %d...\n", service, getpid());
-            bool found = false;
+            bool foundS = false, foundW = false;
             
             for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
                 if (shared_memory->sportelli[i] == service) {
-                    found = true;
+                    foundS = true;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < shared_memory->NOF_WORKERS; i++) {
+                if (shared_memory->lavoratori[i] == service) {
+                    foundW = true;
                     break;
                 }
             }
             
-            if (found) {
+            if (foundS && foundW) {
+                // esegue erogatoreTicket
+                // nello switch utilizzerà il tempiario[] disponibile in erogatore_ticket
                 puts("Vai alla posta");
+
+                // --------------CODA MSG USER-TICKET
+                key_t msgkeyEr = ftok("/tmp", 'U');
+                int msgid = msgget(msgkeyEr, 0666 | IPC_CREAT);
+                
+                // Invio della richiesta
+                TicketMsg req = {1, service, 0, getpid()};
+                msgsnd(msgid, &req, sizeof(TicketMsg) - sizeof(long), 0);
+                puts("message send");
+
+                // Ricezione della richiesta
+                TicketMsg response;
+                msgrcv(msgid, &response, sizeof(TicketMsg) - sizeof(long), getpid(), 0);
+                printf("\033[1;31mUser %d ha ricevuto il ticket %d\033[0m\n", getpid(), response.ticket);
+
+                // Stampa a video solo il tipo di servizio deciso
                 switch (service) {
                     case 0:
                         printf("USER %d: Invio e ritiro pacchi\n", getpid());
@@ -159,10 +173,25 @@ int main(int argc, char *argv[]) {
                         break;
                 }
 
-                int orario = (rand()%1320) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
+                int orario = (rand()%480) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
                 nanosleep((const struct timespec[]){{0, orario}}, NULL);
-                //Controllo posta aperta
-                //Si reca dall'erogatore ticket per controllare se gli sportelli per il suo tipo di op. sono aperti
+
+                // --------------CODA MSG USER-WORKER
+                key_t msgkeyOp = ftok("/tmp", 'V');
+                int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
+
+                printf("Immissione in coda da parte di USER: %d...\n", getpid());
+                
+                // Invio user in coda
+                WorkerMsg w = {service, getpid()};
+                msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
+                
+                puts("USER ha messo il messaggio AAAAAAAAAAAA");
+
+                // Attesa risposta da operatore
+                WorkerMsg wResp;
+                msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
+                printf("User %d ha finito, torna a casa.\n", getpid());
             }
             else puts("Non vai alla posta (servizio non disponibile)");
         }
