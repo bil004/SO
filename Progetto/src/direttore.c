@@ -31,12 +31,17 @@ void signal_handler(int sig)
 
 typedef struct sportello{
     int tipoLavoro;
-} Sportello, *SportelloPtr;
+} Sportello;
 
 struct msgbuf {
     long mtype;
-    SportelloPtr mtext;
+    Sportello mtext;
 };
+
+struct WorkerMsg {
+    long mtype;
+    pid_t pid;
+} wmsg;
 
 void sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
@@ -54,22 +59,18 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
     srand(time(NULL));
     
     for(int i = 0; i< shared_memory->NOF_WORKER_SEATS; i++){
-        SportelloPtr sp = (SportelloPtr)malloc(sizeof(Sportello));
-        if(sp == NULL) {
-            perror("sportello non creato");
-            exit(0);
-        }
-        sp->tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
-        shared_memory->sportelli[i] = sp->tipoLavoro;
+        Sportello sp;
+        sp.tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
+        shared_memory->sportelli[i] = sp.tipoLavoro;
         
-        printf("Sportello %d che offre il servizio: %d \n", i, sp->tipoLavoro);
+        printf("Sportello %d che offre il servizio: %d \n", i, sp.tipoLavoro);
 
         
-        message->mtype =  sp->tipoLavoro;
+        message->mtype =  sp.tipoLavoro;
         message->mtext = sp;
         
         //invio messaggio sulla coda
-        msgsnd(msgId, &message, sizeof(message->mtext) - sizeof(long), 0);
+        msgsnd(msgId, message, sizeof(Sportello), 0);
 
     }
 }
@@ -227,8 +228,14 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         //Svuoto coda degli sportelli
         int result;
-        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {
-        }
+        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {}
+
+        // Clear user-worker message queue
+        key_t msgkeyOp = ftok("/tmp", 'V');
+        int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
+        
+        while ((result = msgrcv(msgidOp, &wmsg, sizeof(wmsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
+
         //riempio coda nuovamente
         if(shared_memory->DAYS_LEFT!=0) {
             for (int i = 0; i < shared_memory->NOF_WORKERS; i++) {
@@ -241,6 +248,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             }
             msg_enqueue(shared_memory, msgId, &message);
         }
+
         if(shared_memory->DAYS_LEFT == 0){
             puts("\nGiorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno

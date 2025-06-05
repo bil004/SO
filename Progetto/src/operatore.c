@@ -23,11 +23,11 @@ volatile sig_atomic_t nextDay = 0;
 
 typedef struct sportello {
     int tipoLavoro;
-} Sportello, *SportelloPtr;
+} Sportello;
 
 struct msgbuf {
     long mtype;
-    SportelloPtr mtext;
+    Sportello mtext;
 };
 
 typedef struct worker_msg {
@@ -133,6 +133,7 @@ int main(int argc, char *argv[]) {
     while (!terminate) {
         puts("\033[0;34mOperatore Sleeping till day starts\033[0m");
         sem_op(semLavoratore, 8, -1);
+        puts("Lavoratore è uscito dal semaforo.");
 
         // Stampa debug ogni giorno, anche se non trova sportello
         printf("\033[0;34mDEBUG: Operatore %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\033[0m\n", getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
@@ -141,8 +142,9 @@ int main(int argc, char *argv[]) {
             printf("\033[0;34mProcesso %d: Terminazione richiesta.\033[0m\n", getpid());
             break;
         }
+        
         struct msgbuf message;
-        int ret = msgrcv(msgId, &message, sizeof(message.mtext), tipoLavoro, 0);
+        int ret = msgrcv(msgId, &message, sizeof(Sportello), tipoLavoro, 0);
         if (ret == -1) {
             if (errno == ENOMSG) {
                 // Nessuno sportello disponibile per questo operatore oggi
@@ -160,14 +162,16 @@ int main(int argc, char *argv[]) {
             
             continue;
         }
+        puts("Lavoratore occupa uno sportello ...");
         // Messaggio ricevuto, lavora
         key_t msgkeyOp = ftok("/tmp", 'V');
-        int msgidW = msgget(msgkeyOp, 0666 | GETVAL);
+        int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
 
-
+        // ricezione utente
         cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS);
-        msgsnd(msgId, &message, sizeof(message.mtext), 0);
+
+        msgsnd(msgId, &message, sizeof(Sportello), 0);
         // Aggiorna statistiche
     }
 

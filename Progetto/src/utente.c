@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
         
-        if(P_SERV <= fail) {
+        if(P_SERV < fail) {
             int service = rand() % 6;
             
             // Controlla se gli sportelli per il suo tipo di op. sono aperti, e se esiste un worker con quel lavoro        
@@ -184,7 +184,10 @@ int main(int argc, char *argv[]) {
                 
                 // Invio user in coda
                 WorkerMsg w = {service, getpid()};
+
+                printf("\nInvio il messaggio con pid: %d\n", w.pid);
                 msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
+                printf("Fine invio messaggio con pid: %d\n\n", w.pid);
                 
                 puts("USER ha messo il messaggio AAAAAAAAAAAA");
 
