@@ -80,6 +80,9 @@
     - Sistemato some issues
 
 TO DO-->
+    - Produrre 2 file (config_timout.conf e config_explode.conf) in grado di generare la terminazione dei file in caso di fine gg e di caso di EXPLODE_THRESHOLD
+    - Fare la parte dell'aggiornamento delle statistiche
+    - NOF_PAUSE per l'operatore
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
     - Sistemare connessione User-Worker
-    - Studiare MDAG xké ho l'esame 🥹
+    - Studiare MDAG xké ho l'esame 🥹 (Rip non lo passerò mai, mi mancano troppe robe)
