@@ -20,6 +20,7 @@
 #define NOF_PAUSE 4
 volatile sig_atomic_t terminate = 0;
 volatile sig_atomic_t nextDay = 0;
+volatile sig_atomic_t noJob = 0;
 
 typedef struct sportello {
     int tipoLavoro;
@@ -38,9 +39,11 @@ typedef struct worker_msg {
 void signal_handler(int sig) {
     if (sig == SIGUSR1) {
         terminate = 1; // Imposta il flag per terminare il processo
+        noJob = 1;
     }
     if (sig == SIGUSR2){
         nextDay = 1;
+        noJob = 1;
     }
 }
 
@@ -73,7 +76,11 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         // Worker esegue le sue operazioni
         WorkerMsg response;
         msgrcv(msgid, &response, sizeof(WorkerMsg) - sizeof(long), tipoLavoro, 0);
-
+        if(noJob){
+            printf("lavoratre %d non ha trovato un lavoro... \n", i);
+            noJob = 0;
+            break;
+        }
         printf("\033[1;34mLavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
         int tmpLav = tempiario[response.mtype];
         int tmpMin = tmpLav/2; 
@@ -136,7 +143,7 @@ int main(int argc, char *argv[]) {
         puts("Lavoratore è uscito dal semaforo.");
 
         // Stampa debug ogni giorno, anche se non trova sportello
-        printf("\033[0;34mDEBUG: Operatore %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\033[0m\n", getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
+        printf("\033[0;34mDEBUG: Operatore %d, PID: %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\033[0m\n", i, getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
 
         if (terminate || shared_memory->DAYS_LEFT <= 0) {
             printf("\033[0;34mProcesso %d: Terminazione richiesta.\033[0m\n", getpid());
@@ -162,7 +169,7 @@ int main(int argc, char *argv[]) {
             
             continue;
         }
-        puts("Lavoratore occupa uno sportello ...");
+        printf("Lavoratore %d occupa lo sportello tipo %ld, %d...\n", i, message.mtype, message.mtext.tipoLavoro);
         // Messaggio ricevuto, lavora
         key_t msgkeyOp = ftok("/tmp", 'V');
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);

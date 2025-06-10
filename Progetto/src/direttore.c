@@ -60,7 +60,7 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
     
     for(int i = 0; i< shared_memory->NOF_WORKER_SEATS; i++){
         Sportello sp;
-        sp.tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
+        sp.tipoLavoro = (rand() % 6); //tipo lavoro da 0 a 5
         shared_memory->sportelli[i] = sp.tipoLavoro;
         
         printf("Sportello %d che offre il servizio: %d \n", i, sp.tipoLavoro);
@@ -133,8 +133,8 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 char msgId_str[64];
                 sprintf(I, "%d", i);
                 sprintf(msgId_str, "%d", msgId);
-                int tipolavoro = (rand() % 6) + 1;
-                shared_memory->lavoratori[k] = tipolavoro - 1;
+                int tipolavoro = (rand() % 6);
+                shared_memory->lavoratori[k] = tipolavoro;
                 char tipoLavoro_str[64];
                 sprintf(tipoLavoro_str, "%d", tipolavoro);
                 execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);
@@ -236,7 +236,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         
         while ((result = msgrcv(msgidOp, &wmsg, sizeof(wmsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
 
-        //riempio coda nuovamente
+        //Operatore esce da msgRcv per sportelli
         if(shared_memory->DAYS_LEFT!=0) {
             for (int i = 0; i < shared_memory->NOF_WORKERS; i++) {
                 if (kill(opPid[i], 0) == 0) {

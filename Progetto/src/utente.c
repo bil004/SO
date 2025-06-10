@@ -95,13 +95,14 @@ int main(int argc, char *argv[]) {
             break;
         }
         // Probabilità della decisione dell'utente
-        srand(time(NULL)^getpid());
         int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
+        srand(time(NULL)^getpid());
         int P_SERV = (rand() % intervallo) + shared_memory->P_SERV_MIN;
+        srand(time(NULL)^(getpid()+1));
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
         
-        if(P_SERV < fail) {
+        if(P_SERV <= fail) {
             int service = rand() % 6;
             
             // Controlla se gli sportelli per il suo tipo di op. sono aperti, e se esiste un worker con quel lavoro        
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
                         break;
                 }
 
-                int orario = (rand()%480) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 1 minuto e 22 ore dal momento della decisione
+                int orario = (rand()%360) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 0 minuti e 6 ore dal momento della decisione
                 nanosleep((const struct timespec[]){{0, orario}}, NULL);
 
                 // --------------CODA MSG USER-WORKER
