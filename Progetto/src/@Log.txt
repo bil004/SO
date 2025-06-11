@@ -96,6 +96,8 @@
 TO DO-->
     - Produrre 2 file (config_timout.conf e config_explode.conf) in grado di generare la terminazione dei file in caso di fine gg e di caso di EXPLODE_THRESHOLD
     - Fare la parte dell'aggiornamento delle statistiche
-    - Sistemare casini con le code
+    - Gestire tutta la parte che riguarda la terminazione in caso di fallimento (see point 1)
+    - Spostare le robe di main.c dentro direttore.c (non serve il main.c)
+    - crea e sistemare i file .h con dentro le struct e le include
     - NOF_PAUSE per l'operatore
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)

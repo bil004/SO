@@ -4,7 +4,7 @@ BIN_DIR = bin
 
 # Specifichiamo il compilatore e le opzioni di compilazione
 CC = gcc
-CFLAGS = -Wvla -Wextra -Werror -I$(SRC_DIR)
+CFLAGS = -Wvla -Wextra -Werror -I -D_GNU_SOURCE$(SRC_DIR)
 
 # Lista dei file sorgenti e degli eseguibili
 SOURCES = main.c direttore.c erogatoreTicket.c operatore.c utente.c
