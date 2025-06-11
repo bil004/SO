@@ -55,7 +55,7 @@ int sem_op(int semid, int sem_num, int sem_op) {
 
     if (semop(semid, &operazione, 1) == -1) {
         if (errno == EINTR)
-            printf("\033[1;34m[WORKER] Processo %d: Semaforo interrotto da segnale.\033[0m\n", getpid());
+            printf("\033[1;34m\033[1m[WORKER] Processo %d: Semaforo interrotto da segnale.\033[0m\n", getpid());
         else{
             perror("[WORKER] Errore nel semaforo: ");
             exit(EXIT_FAILURE);
@@ -77,13 +77,13 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         WorkerMsg response;
         msgrcv(msgid, &response, sizeof(WorkerMsg) - sizeof(long), tipoLavoro, 0);
         if(noJob){
-            printf("\033[1;34m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i);
+            printf("\033[1;34m\033[1m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i);
             noJob = 0;
             break;
         }
         
         if (response.pid > 0)
-            printf("\033[1;34m[WORKER] Lavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
+            printf("\033[1;34m\033[1m[WORKER] Lavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
 
         int tmpLav = tempiario[response.mtype];
         int tmpMin = tmpLav/2; 
@@ -98,7 +98,7 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         WorkerMsg end = {response.pid, 0}; // 0 --> il PID è inutile dopo
         msgsnd(msgid, &end, sizeof(WorkerMsg) - sizeof(long), 0);
     }
-    printf("\033[1;34m[WORKER] Lavoratore %d ha finito di lavorare\033[0m\n", i);
+    printf("\033[1;34m\033[1m[WORKER] Lavoratore %d ha finito di lavorare\033[0m\n", i);
 }
 
 int main(int argc, char *argv[]) {
@@ -120,8 +120,7 @@ int main(int argc, char *argv[]) {
 
     // Attacca la memoria condivisa
     Config *shared_memory = (Config *)shmat(shmId, NULL, 0);
-    if (shared_memory == (Config *)-1)
-    {
+    if (shared_memory == (Config *)-1) {
         perror("[WORKER] Errore nell'attacco alla memoria condivisa");
         exit(EXIT_FAILURE);
     }
@@ -147,7 +146,7 @@ int main(int argc, char *argv[]) {
         puts("[WORKER] Lavoratore è uscito dal semaforo.");
 
         // Stampa debug ogni giorno, anche se non trova sportello
-        printf("\033[0;34m[WORKER] DEBUG: Lavoratore %d, PID: %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\033[0m\n", i, getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
+        printf("\033[0;34m[WORKER] Lavoratore %d, PID: %d, tipoLavoro=%d\033[0m\n", i, getpid(), tipoLavoro);
 
         if (terminate || shared_memory->DAYS_LEFT <= 0) {
             printf("\033[0;34m[WORKER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());
@@ -159,21 +158,21 @@ int main(int argc, char *argv[]) {
         if (ret == -1) {
             if (errno == ENOMSG) {
                 // Nessuno sportello disponibile per questo operatore oggi
-                printf("\033[1;34m[WORKER] Lavoratore %d: Nessuno sportello disponibile oggi per tipoLavoro=%d\033[0m\n", getpid(), tipoLavoro);
+                printf("\033[1;34m\033[1m[WORKER] Lavoratore %d: Nessuno sportello disponibile oggi per tipoLavoro=%d\033[0m\n", getpid(), tipoLavoro);
                 continue;
             }
             if (errno == EINTR && terminate) {
-                printf("\033[1;34m[WORKER] Processo %d: msgrcv interrotto da segnale.\033[0m\n", getpid());
+                printf("\033[1;34m\033[1m[WORKER] Processo %d: msgrcv interrotto da segnale.\033[0m\n", getpid());
                 break;
             }
             if (errno == EINTR && nextDay) {
-                printf("\033[1;34m[WORKER] Processo %d: msgrcv interrotto. Si passa al gg successivo.\033[0m\n", getpid());
+                printf("\033[1;34m\033[1m[WORKER] Processo %d: msgrcv interrotto. Si passa al gg successivo.\033[0m\n", getpid());
                 nextDay = 0;
             }
             
             continue;
         }
-        printf("\033[1;34m[WORKER] Lavoratore %d occupa lo sportello tipo %ld, %d...\033[0m\n", i, message.mtype, message.mtext.tipoLavoro);
+        printf("\033[1;34m\033[1m[WORKER] Lavoratore %d occupa lo sportello tipo %ld, %d...\033[0m\n", i, message.mtype, message.mtext.tipoLavoro);
         // Messaggio ricevuto, lavora
         key_t msgkeyOp = ftok("/tmp", 'V');
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
@@ -192,7 +191,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("\033[1;34m[WORKER] operatore %d finito\033[0m\n", getpid());
+    printf("\033[1;34m\033[1m[WORKER] operatore %d finito\033[0m\n", getpid());
 
     exit(0);
 }

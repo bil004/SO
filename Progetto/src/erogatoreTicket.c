@@ -61,11 +61,11 @@ int main(int argc, char *argv[]) {
 
     //incrementa semaforo per informare il padre
     sem_op(semErogatore, 0, 1);
-    printf("\033[1;33m[TICKET] Inizializzazione Erogatore Terminata\033[0m\n");
+    printf("\033[1;33m\033[1m[TICKET] Inizializzazione Erogatore Terminata\033[0m\n");
     //Attende la risposta del padre
     sem_op(semErogatore, 4, -1);
     
-    printf("\033[1;33m[TICKET] Running Erogatore TICKET\033[0m\n");
+    printf("\033[1;33m\033[1m[TICKET] Running Erogatore TICKET\033[0m\n");
 
     key_t msgkey = ftok("/tmp", 'U');
     int msgid = msgget(msgkey, 0666 | IPC_CREAT);
@@ -73,13 +73,13 @@ int main(int argc, char *argv[]) {
     
     while (!terminate) {
         TicketMsg richiesta;
-        puts("\033[1;33m[TICKET] mi preparo a ricevere il messaggio\033[0m");
+        puts("\033[1;33m\033[1m[TICKET] mi preparo a ricevere il messaggio\033[0m");
         msgrcv(msgid, &richiesta, sizeof(TicketMsg) - sizeof(long), 1, 0);
-        puts("\033[1;33m[TICKET] messaggio ricevuto\033[0m");
+        puts("\033[1;33m\033[1m[TICKET] messaggio ricevuto\033[0m");
 
         TicketMsg risposta = {richiesta.pid, richiesta.servizio, next_ticket++, richiesta.pid};
         msgsnd(msgid, &risposta, sizeof(TicketMsg) - sizeof(long), 0);
-        puts("\033[1;33m[TICKET] messaggio inviato\033[0m");
+        puts("\033[1;33m\033[1m[TICKET] messaggio inviato\033[0m");
     }
 
     exit(0);

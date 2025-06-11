@@ -60,14 +60,14 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
     
     for(int i = 0; i< shared_memory->NOF_WORKER_SEATS; i++){
         Sportello sp;
-        sp.tipoLavoro = (rand() % 6); //tipo lavoro da 0 a 5
+        sp.tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
         shared_memory->sportelli[i] = sp.tipoLavoro;
         
         printf("\033[1;32m[DIRECTOR] Sportello %d che offre il servizio: %d \033[0m\n", i, sp.tipoLavoro);
 
         
         message->mtype =  sp.tipoLavoro;
-        message->mtext = sp;
+        message->mtext.tipoLavoro = sp.tipoLavoro;
         
         //invio messaggio sulla coda
         msgsnd(msgId, message, sizeof(Sportello), 0);
@@ -133,7 +133,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 char msgId_str[64];
                 sprintf(I, "%d", i);
                 sprintf(msgId_str, "%d", msgId);
-                int tipolavoro = (rand() % 6);
+                int tipolavoro = (rand() % 6) + 1;
                 shared_memory->lavoratori[k] = tipolavoro;
                 char tipoLavoro_str[64];
                 sprintf(tipoLavoro_str, "%d", tipolavoro);

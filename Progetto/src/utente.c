@@ -87,11 +87,11 @@ int main(int argc, char *argv[]) {
 
     // -----------------------------------------------------------------------------
     while (shared_memory->DAYS_LEFT > 0 && !terminate) {
-        puts("\033[1;31m[USER] Sleeping till day starts\033[0m");
+        puts("\033[1;31m\033[1m[USER] Sleeping till day starts\033[0m");
         sem_op(semUtente, 8, -1);
     
         if (terminate) {
-            printf("\033[1;31m[USER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());
+            printf("\033[1;31m\033[1m[USER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());
             break;
         }
         // Probabilità della decisione dell'utente
@@ -103,10 +103,10 @@ int main(int argc, char *argv[]) {
 
         
         if(P_SERV <= fail) {
-            int service = rand() % 6;
+            int service = (rand() % 6) + 1;
             
             // Controlla se gli sportelli per il suo tipo di op. sono aperti, e se esiste un worker con quel lavoro        
-            printf("\033[1;31m[USER] Ricerca dello sportello per %d da parte di %d...\033[0m\n", service, getpid());
+            printf("\033[1;31m\033[1m[USER] Ricerca dello sportello per %d da parte di %d...\033[0m\n", service, getpid());
             bool foundS = false, foundW = false;
             
             for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
             if (foundS && foundW) {
                 // esegue erogatoreTicket
                 // nello switch utilizzerà il tempiario[] disponibile in erogatore_ticket
-                printf("\033[1;31m[USER] %d va alla posta\033[0m\n", getpid());
+                printf("\033[1;31m\033[1m[USER] %d va alla posta\033[0m\n", getpid());
 
                 // --------------CODA MSG USER-TICKET
                 key_t msgkeyEr = ftok("/tmp", 'U');
@@ -135,38 +135,38 @@ int main(int argc, char *argv[]) {
                 // Invio della richiesta
                 TicketMsg req = {1, service, 0, getpid()};
                 msgsnd(msgid, &req, sizeof(TicketMsg) - sizeof(long), 0);
-                puts("\033[1;31m[USER] message send\033[0m");
+                puts("\033[1;31m\033[1m[USER] message send\033[0m");
 
                 // Ricezione della richiesta
                 TicketMsg response;
                 msgrcv(msgid, &response, sizeof(TicketMsg) - sizeof(long), getpid(), 0);
-                printf("\033[1;31m[USER] %d ha ricevuto il ticket %d\033[0m\n", getpid(), response.ticket);
+                printf("\033[1;31m\033[1m[USER] %d ha ricevuto il ticket %d\033[0m\n", getpid(), response.ticket);
 
                 // Stampa a video solo il tipo di servizio deciso
                 switch (service) {
-                    case 0:
-                        printf("\033[1;31m[USER] %d: Invio e ritiro pacchi\033[0m\n", getpid());
+                    case 1:
+                        printf("\033[1;31m\033[1m[USER] %d: Invio e ritiro pacchi (1)\033[0m\n", getpid());
                         // sleep(tempiario[service]);
                         break;
                     
-                    case 1:
-                        printf("\033[1;31m[USER] %d: Invio e lettere e raccomandate\033[0m\n", getpid());
-                        break;
-                    
                     case 2:
-                        printf("\033[1;31m[USER] %d: Prelievi e versamenti Bancoposta\033[0m\n", getpid());
+                        printf("\033[1;31m\033[1m[USER] %d: Invio e lettere e raccomandate (2)\033[0m\n", getpid());
                         break;
                     
                     case 3:
-                        printf("\033[1;31m[USER] %d: Pagamento bollettini postali\033[0m\n", getpid());
+                        printf("\033[1;31m\033[1m[USER] %d: Prelievi e versamenti Bancoposta (3)\033[0m\n", getpid());
                         break;
                     
                     case 4:
-                        printf("\033[1;31m[USER] %d: Acquisto prodotti finanziari\033[0m\n", getpid());
+                        printf("\033[1;31m\033[1m[USER] %d: Pagamento bollettini postali (4)\033[0m\n", getpid());
                         break;
                     
                     case 5:
-                        printf("\033[1;31m[USER] %d: Acquisto orologi e braccialetti\033[0m\n", getpid());
+                        printf("\033[1;31m\033[1m[USER] %d: Acquisto prodotti finanziari (5)\033[0m\n", getpid());
+                        break;
+                    
+                    case 6:
+                        printf("\033[1;31m\033[1m[USER] %d: Acquisto orologi e braccialetti (6)\033[0m\n", getpid());
                         break;
                     
                     default:
@@ -181,25 +181,26 @@ int main(int argc, char *argv[]) {
                 key_t msgkeyOp = ftok("/tmp", 'V');
                 int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
-                printf("\033[1;31m[USER] Immissione in coda da parte di %d...\033[0m\n", getpid());
+                printf("\033[1;31m\033[1m[USER] Immissione in coda da parte di %d...\033[0m\n", getpid());
                 
                 // Invio user in coda
                 WorkerMsg w = {service, getpid()};
 
-                printf("\033[1;31m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
+                printf("\033[1;31m\033[1m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
                 msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
-                printf("\033[1;31m[USER] Fine invio messaggio con pid: %d\033[0m\n\n", w.pid);
+                printf("\033[1;31m\033[1m[USER] Fine invio messaggio con pid: %d\033[0m\n", w.pid);
                 
-                puts("\033[1;31m[USER] ha inviato la richiesta!\033[0m");
+                puts("\033[1;31m\033[1m[USER] ha inviato la richiesta!\033[0m");
 
                 // Attesa risposta da operatore
                 WorkerMsg wResp;
                 msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
-                printf("\033[1;31m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
+                printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
             }
-            else puts("\033[1;31m[USER] Non vai alla posta (servizio non disponibile)\033[0m");
+            else 
+                printf("\033[1;31m\033[1m[USER] %d non va alla posta (servizio non disponibile)\033[0m\n", getpid());
         }
-        else puts("\033[1;31m[USER] Non vai alla posta\033[0m");
+        else puts("\033[1;31m\033[1m[USER] Non vai alla posta\033[0m");
 
         sem_op(semUtente, 8, 0);
         //Aggiorna statistiche
@@ -213,7 +214,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("\033[1;31m[USER] %d finito\033[0m\n", getpid());
+    printf("\033[1;31m\033[1m[USER] %d finito\033[0m\n", getpid());
 
     exit(0);
 }
