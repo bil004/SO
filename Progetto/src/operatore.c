@@ -55,9 +55,9 @@ int sem_op(int semid, int sem_num, int sem_op) {
 
     if (semop(semid, &operazione, 1) == -1) {
         if (errno == EINTR)
-            printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
+            printf("\033[1;34m[WORKER] Processo %d: Semaforo interrotto da segnale.\033[0m\n", getpid());
         else{
-            perror("Errore nel semaforo: ");
+            perror("[WORKER] Errore nel semaforo: ");
             exit(EXIT_FAILURE);
         }
     }
@@ -65,7 +65,7 @@ int sem_op(int semid, int sem_num, int sem_op) {
 
 void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec) {
 
-    printf("\033[0;34mLavoratore %d sta lavorando\033[0m\n", i);
+    printf("\033[0;34m[WORKER] %d sta lavorando\033[0m\n", i);
     while (1) {
         int valoreSemaforo = semctl(semLavoratore, 8, GETVAL);
         if (valoreSemaforo == 0){
@@ -77,11 +77,14 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         WorkerMsg response;
         msgrcv(msgid, &response, sizeof(WorkerMsg) - sizeof(long), tipoLavoro, 0);
         if(noJob){
-            printf("lavoratre %d non ha trovato un lavoro... \n", i);
+            printf("\033[1;34m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i);
             noJob = 0;
             break;
         }
-        printf("\033[1;34mLavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
+        
+        if (response.pid > 0)
+            printf("\033[1;34m[WORKER] Lavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
+
         int tmpLav = tempiario[response.mtype];
         int tmpMin = tmpLav/2; 
 
@@ -95,12 +98,12 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         WorkerMsg end = {response.pid, 0}; // 0 --> il PID è inutile dopo
         msgsnd(msgid, &end, sizeof(WorkerMsg) - sizeof(long), 0);
     }
-    printf("\033[0;34mLavoratore %d ha finito di lavorare\033[0m\n", i);
+    printf("\033[1;34m[WORKER] Lavoratore %d ha finito di lavorare\033[0m\n", i);
 }
 
 int main(int argc, char *argv[]) {
     if (argc != 6) {
-        fprintf(stderr, "Incorrect number of arg\n");
+        fprintf(stderr, "[WORKER] Incorrect number of arg\n");
         exit(1);
     }
 
@@ -119,14 +122,14 @@ int main(int argc, char *argv[]) {
     Config *shared_memory = (Config *)shmat(shmId, NULL, 0);
     if (shared_memory == (Config *)-1)
     {
-        perror("Errore nell'attacco alla memoria condivisa");
+        perror("[WORKER] Errore nell'attacco alla memoria condivisa");
         exit(EXIT_FAILURE);
     }
 
     // incrementa semaforo per informare il padre
     sem_op(semLavoratore, 2, 1);
 
-    printf("\033[0;34mInizializzazione Terminata Lavoratore %d\033[0m\n", i);
+    printf("\033[0;34m[WORKER] %d inizializzazione terminata\033[0m\n", i);
 
     // Attende la risposta del padre
     sem_op(semLavoratore, 6, -1);
@@ -138,15 +141,16 @@ int main(int argc, char *argv[]) {
         conta la gestione del ticket come "non effettuata" */
 
     while (!terminate) {
-        puts("\033[0;34mOperatore Sleeping till day starts\033[0m");
+        puts("\n");
+        puts("\033[0;34m[WORKER] Operatore Sleeping till day starts\033[0m");
         sem_op(semLavoratore, 8, -1);
-        puts("Lavoratore è uscito dal semaforo.");
+        puts("[WORKER] Lavoratore è uscito dal semaforo.");
 
         // Stampa debug ogni giorno, anche se non trova sportello
-        printf("\033[0;34mDEBUG: Operatore %d, PID: %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\033[0m\n", i, getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
+        printf("\033[0;34m[WORKER] DEBUG: Lavoratore %d, PID: %d, DAYS_LEFT=%d, terminate=%d, tipoLavoro=%d\033[0m\n", i, getpid(), shared_memory->DAYS_LEFT, terminate, tipoLavoro);
 
         if (terminate || shared_memory->DAYS_LEFT <= 0) {
-            printf("\033[0;34mProcesso %d: Terminazione richiesta.\033[0m\n", getpid());
+            printf("\033[0;34m[WORKER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());
             break;
         }
         
@@ -155,21 +159,21 @@ int main(int argc, char *argv[]) {
         if (ret == -1) {
             if (errno == ENOMSG) {
                 // Nessuno sportello disponibile per questo operatore oggi
-                printf("\033[0;34mOperatore %d: Nessuno sportello disponibile oggi per tipoLavoro=%d\033[0m\n", getpid(), tipoLavoro);
+                printf("\033[1;34m[WORKER] Lavoratore %d: Nessuno sportello disponibile oggi per tipoLavoro=%d\033[0m\n", getpid(), tipoLavoro);
                 continue;
             }
             if (errno == EINTR && terminate) {
-                printf("\033[0;34mProcesso %d: msgrcv interrotto da segnale.\033[0m\n", getpid());
+                printf("\033[1;34m[WORKER] Processo %d: msgrcv interrotto da segnale.\033[0m\n", getpid());
                 break;
             }
             if (errno == EINTR && nextDay) {
-                printf("\033[0;34mProcesso %d: msgrcv interrotto. Si passa al gg successivo.\033[0m\n", getpid());
+                printf("\033[1;34m[WORKER] Processo %d: msgrcv interrotto. Si passa al gg successivo.\033[0m\n", getpid());
                 nextDay = 0;
             }
             
             continue;
         }
-        printf("Lavoratore %d occupa lo sportello tipo %ld, %d...\n", i, message.mtype, message.mtext.tipoLavoro);
+        printf("\033[1;34m[WORKER] Lavoratore %d occupa lo sportello tipo %ld, %d...\033[0m\n", i, message.mtype, message.mtext.tipoLavoro);
         // Messaggio ricevuto, lavora
         key_t msgkeyOp = ftok("/tmp", 'V');
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
@@ -184,11 +188,11 @@ int main(int argc, char *argv[]) {
 
     // Detach shared memory
     if (shmdt(shared_memory) == -1) {
-        perror("shmdt error!");
+        perror("[WORKER] shmdt error!");
         exit(EXIT_FAILURE);
     }
 
-    printf("\033[0;34moperatore %d finito\033[0m\n", getpid());
+    printf("\033[1;34m[WORKER] operatore %d finito\033[0m\n", getpid());
 
     exit(0);
 }

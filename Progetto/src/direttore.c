@@ -24,7 +24,7 @@ void signal_handler(int sig)
 {
     if (sig == SIGUSR1)
     {
-        perror("Direttore Ucciso");
+        perror("[DIRECTOR] Direttore Ucciso");
         exit(EXIT_FAILURE); // Imposta il flag per terminare il processo
     }
 }
@@ -50,7 +50,7 @@ void sem_op(int semid, int sem_num, int sem_op) {
     operazione.sem_flg = 0;       // Nessuna flag
 
     if (semop(semid, &operazione, 1) == -1) {
-        perror("Errore nell'operazione sul semaforo");
+        perror("[DIRECTOR] Errore nell'operazione sul semaforo");
         exit(EXIT_FAILURE);
     }
 }
@@ -63,7 +63,7 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
         sp.tipoLavoro = (rand() % 6); //tipo lavoro da 0 a 5
         shared_memory->sportelli[i] = sp.tipoLavoro;
         
-        printf("Sportello %d che offre il servizio: %d \n", i, sp.tipoLavoro);
+        printf("\033[1;32m[DIRECTOR] Sportello %d che offre il servizio: %d \033[0m\n", i, sp.tipoLavoro);
 
         
         message->mtype =  sp.tipoLavoro;
@@ -86,12 +86,12 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     pid_t erogatoreTicket = fork();
     switch(erogatoreTicket) {
         case -1:
-            perror("erogatore_ticket not created!");
+            perror("[DIRECTOR] erogatore_ticket not created!");
             exit(EXIT_FAILURE);
             break;
 
         case 0:
-            printf("Erogatore ticket con pid:%d\n", getpid());
+            printf("\033[1;32m[DIRECTOR] Erogatore ticket con pid:%d\033[0m\n", getpid());
             execl("./erogatoreTicket", "./erogatoreTicket", semWaitInit_str, shmid_str, NULL);
             errExit("execl failure!");
             break;
@@ -107,7 +107,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     //Creare la Coda di messaggi per i lavoratori
     int msgId = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
     if (msgId == -1) {
-        perror("Errore coda di messaggi!");
+        perror("[DIRECTOR] Errore coda di messaggi!");
         exit(1);
     }
     struct msgbuf message;
@@ -123,7 +123,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         pid_t Lavoratore = fork();
         switch(Lavoratore) {
             case -1:
-                errExit("operatore process error!");
+                errExit("[DIRECTOR] operatore process error!");
                 break;
 
             case 0:
@@ -138,7 +138,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 char tipoLavoro_str[64];
                 sprintf(tipoLavoro_str, "%d", tipolavoro);
                 execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);
-                errExit("execl failure!");
+                errExit("[DIRECTOR] execl failure!");
                 break;
 
             default:
@@ -156,14 +156,14 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         pid_t Utente = fork();
         switch(Utente) {
             case -1:
-                errExit("utente process error!");
+                errExit("[DIRECTOR] utente process error!");
                 break;
             
             case 0:
                 char I[64];
                 sprintf(I, "%d", i);
                 execl("./utente", "./utente", semWaitInit_str, shmid_str, I, NULL);
-                errExit("execl failure!");
+                errExit("[DIRECTOR] execl failure!");
                 break;
 
             default:
@@ -178,26 +178,26 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         int semWaitInit = atoi(semWaitInit_str);
         sem_op(semWaitInit, 3, -1);
     }
-    printf("Inizializzazione FIGLI Terminata\n");
+    puts("[DIRECTOR] Inizializzazione FIGLI Terminata");
 
     //aspetta inizializzazione EROGATORE
     int semWaitInit = atoi(semWaitInit_str);
     sem_op(semWaitInit, 0, -1);
-    printf("Inizializzazione EROGATORE Terminata\n");
+    puts("[DIRECTOR] Inizializzazione EROGATORE Terminata");
 
     //aspetta inizializzazione LAVORATORI
     for(int i=0; i<shared_memory->NOF_WORKERS; i++){
         int semWaitInit = atoi(semWaitInit_str);
         sem_op(semWaitInit, 2, -1);
     }
-    printf("Inizializzazione LAVORATORI Terminata\n");
+    printf("\033[1;32m[DIRECTOR] Inizializzazione LAVORATORI Terminata\033[0m\n");
 
-    puts("\nsessione iniziata");
+    puts("\nSESSIONE INIZIATA");
     
     // creare un semaforo mutex giornata attiva
     for (int giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
         // aggiorna il semaforo per indicare che la giornata è iniziata e waita
-        printf("\n[Direttore] Giorno %d iniziato.\n", giorno + 1);
+        printf("\033[1;32m\n[DIRECTOR] Giorno %d iniziato.\033[0m\n", giorno + 1);
         
         semctl(semWaitInit, 8, SETVAL, 1+ shared_memory->NOF_WORKERS + shared_memory->NOF_USERS); //reimposta il semaforo fine giornata a 1 (giornata non finita)
 
@@ -222,9 +222,9 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         //cambio dei lavori sportelli
         shared_memory->DAYS_LEFT--;
-        printf("Giorni rimanenti: %d\n", shared_memory->DAYS_LEFT);
+        printf("\033[1;32m[DIRECTOR] Giorni rimanenti: %d\033[0m\n", shared_memory->DAYS_LEFT);
         
-        puts("Fine giornata.");
+        puts("[DIRECTOR] Fine giornata.");
 
         //Svuoto coda degli sportelli
         int result;
@@ -241,23 +241,23 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             for (int i = 0; i < shared_memory->NOF_WORKERS; i++) {
                 if (kill(opPid[i], 0) == 0) {
                     if (kill(opPid[i], SIGUSR2) == -1) {
-                        perror("errore invio segnale");
+                        perror("[DIRECTOR] errore invio segnale");
                     }
-                    else printf("Operatore segnale uscita coda a PID: %d\n", opPid[i]);
+                    else printf("\033[1;32m[DIRECTOR] Operatore segnale uscita coda a PID: %d\033[0m\n", opPid[i]);
                 }
             }
             msg_enqueue(shared_memory, msgId, &message);
         }
 
         if(shared_memory->DAYS_LEFT == 0){
-            puts("\nGiorni finiti, chiudo tutto");
+            puts("\n[DIRECTOR] Giorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno
             for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
                 if (kill(pid_array[i], 0) == 0) {
                     if (kill(pid_array[i], SIGUSR1) == -1) {
-                        perror("Errore nell'invio del segnale");
+                        perror("[DIRECTOR] Errore nell'invio del segnale");
                     }
-                    else printf("Segnale inviato a PID: %d\n", pid_array[i]);
+                    else printf("\033[1;32m[DIRECTOR] Segnale inviato a PID: %d\033[0m\n", pid_array[i]);
                 } 
             }
             break;
@@ -285,10 +285,10 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         if (pid == -1) {
             if (errno == ECHILD) {
                 // Non ci sono più figli
-                printf("Tutti i figli sono terminati.\n");
+                printf("\033[1;32m[DIRECTOR] Tutti i figli sono terminati.\033[0m\n");
                 break;
             } else {
-                perror("Errore durante waitpid");
+                perror("[DIRECTOR] Errore durante waitpid");
                 break;
             }
         } else {
@@ -298,18 +298,18 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     
     // Deallocazione della coda di messaggi
     if (msgctl(msgId, IPC_RMID, NULL) == -1) {
-        perror("Errore nella deallocazione della coda di messaggi");
+        perror("[DIRECTOR] Errore nella deallocazione della coda di messaggi");
         exit(EXIT_FAILURE);
     }
 
-    puts("direttore finito\n");
+    printf("\033[1;32m[DIRECTOR] direttore finito\033[0m\n");
 
 
 }
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        fprintf(stderr, "Incorrect number of arg\n");
+        fprintf(stderr, "[DIRECTOR] Incorrect number of arg\n");
         exit(1);
     }
 
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
     
     // Verifica che il semaforo esista
     if (semWaitInit < 0) {
-        perror("Errore nel recupero del semaforo");
+        perror("[DIRECTOR] Errore nel recupero del semaforo");
         exit(1);
     }
 
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
 
     Config *shared_memory = (Config *)shmat(shm_id, NULL, 0);
     if (shared_memory == (Config *)-1) {
-        perror("Errore nell'attacco alla memoria condivisa");
+        perror("[DIRECTOR] Errore nell'attacco alla memoria condivisa");
         exit(EXIT_FAILURE);
     }
 
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
     // Simula la durata della giornata
     
     if (shmdt(shared_memory) == -1) {
-        perror("shmdt error!");
+        perror("[DIRECTOR] shmdt error!");
         exit(EXIT_FAILURE);
     }
 

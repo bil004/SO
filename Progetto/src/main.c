@@ -89,7 +89,7 @@ int main() {
     pid_t pid = fork();
     if (pid == 0) {
         pid = getpid();
-        printf("Direttore con pid:%d\n", pid);
+        printf("\033[1;32mDirettore con pid:%d\033[0m\n", pid);
         char shm_id_str[10], semWaitInit_str[10];
         snprintf(shm_id_str, 10, "%d", shm_id);
         snprintf(semWaitInit_str, 10, "%d", semWaitInit);
@@ -121,6 +121,6 @@ int main() {
         exit(1);
     }
     
-    printf("Simulazione terminata.\n");
+    printf("\033[1;32mSimulazione terminata.\033[0m\n");
     return 0;
 }

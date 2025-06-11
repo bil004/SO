@@ -50,7 +50,7 @@ int sem_op(int semid, int sem_num, int sem_op) {
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        fprintf(stderr, "Incorrect number of arg\n");
+        fprintf(stderr, "[TICKET] Incorrect number of arg\n");
         exit(1);
     }
 
@@ -61,11 +61,11 @@ int main(int argc, char *argv[]) {
 
     //incrementa semaforo per informare il padre
     sem_op(semErogatore, 0, 1);
-    printf("Inizializzazione Erogatore Terminata\n");
+    printf("\033[1;33m[TICKET] Inizializzazione Erogatore Terminata\033[0m\n");
     //Attende la risposta del padre
     sem_op(semErogatore, 4, -1);
     
-    printf("Running Erogatore TICKET\n");
+    printf("\033[1;33m[TICKET] Running Erogatore TICKET\033[0m\n");
 
     key_t msgkey = ftok("/tmp", 'U');
     int msgid = msgget(msgkey, 0666 | IPC_CREAT);
@@ -73,13 +73,13 @@ int main(int argc, char *argv[]) {
     
     while (!terminate) {
         TicketMsg richiesta;
-        puts("EROGATORE_TICKET: mi preparo a ricevere il messaggio");
+        puts("\033[1;33m[TICKET] mi preparo a ricevere il messaggio\033[0m");
         msgrcv(msgid, &richiesta, sizeof(TicketMsg) - sizeof(long), 1, 0);
-        puts("EROGATORE_TICKET: messaggio ricevuto");
+        puts("\033[1;33m[TICKET] messaggio ricevuto\033[0m");
 
         TicketMsg risposta = {richiesta.pid, richiesta.servizio, next_ticket++, richiesta.pid};
         msgsnd(msgid, &risposta, sizeof(TicketMsg) - sizeof(long), 0);
-        puts("EROGATORE_TICKET: messaggio inviato");
+        puts("\033[1;33m[TICKET] messaggio inviato\033[0m");
     }
 
     exit(0);
