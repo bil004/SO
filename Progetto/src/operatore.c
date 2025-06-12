@@ -17,7 +17,6 @@
 #include "../include/config.h"
 #include "../include/operatore.h"
 
-#define NOF_PAUSE 4
 volatile sig_atomic_t terminate = 0;
 volatile sig_atomic_t nextDay = 0;
 volatile sig_atomic_t noJob = 0;
@@ -63,19 +62,42 @@ int sem_op(int semid, int sem_num, int sem_op) {
     }
 }
 
-void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec) {
-
+void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause) {
     printf("\033[0;34m[WORKER] %d sta lavorando\033[0m\n", i);
     while (1) {
-        int valoreSemaforo = semctl(semLavoratore, 8, GETVAL);
-        if (valoreSemaforo == 0){
-            // Semaforo impostato dal processo padre, termina il ciclo
+        if (terminate) break;
+        int fineGG = semctl(semLavoratore, 8, GETVAL);
+        if (fineGG == 0) {
+            break;
+        }
+        srand(time(0)^getpid());
+
+        if (nofPause != 0 && (rand()%10) > 6) {
+            printf("\033[1;34m\033[1m[WORKER] %d fa pausa!\033[0m\n", getpid());
+            nofPause--;
             break;
         }
 
         // Worker esegue le sue operazioni
         WorkerMsg response;
-        msgrcv(msgid, &response, sizeof(WorkerMsg) - sizeof(long), tipoLavoro, 0);
+        int ret = msgrcv(msgid, &response, sizeof(WorkerMsg) - sizeof(long), tipoLavoro, 0);
+        if (ret == -1) {
+            if (errno == EINTR && terminate) {
+                printf("\033[1;34m\033[1m[WORKER] msgrcv interrotto da segnale, termino.\033[0m\n");
+                break;
+            }
+            if (errno == EINTR && nextDay) {
+                nextDay = 0;
+                break;
+            }
+            if (errno == ENOMSG) {
+                break;
+            }
+            // altri errori
+            perror("[WORKER] msgrcv error");
+            break;
+        }
+        if(terminate) break;
         if(noJob){
             printf("\033[1;34m\033[1m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i);
             noJob = 0;
@@ -94,6 +116,7 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
 
         nanosleep((const struct timespec[]){{0, time * nanoSec}}, NULL);
 
+        if(terminate) break;
         // Worker finisce, invia la risposta a user
         WorkerMsg end = {response.pid, 0}; // 0 --> il PID è inutile dopo
         msgsnd(msgid, &end, sizeof(WorkerMsg) - sizeof(long), 0);
@@ -125,6 +148,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    int nofPause = shared_memory->NOF_PAUSE;
+
     // incrementa semaforo per informare il padre
     sem_op(semLavoratore, 2, 1);
 
@@ -143,6 +168,7 @@ int main(int argc, char *argv[]) {
         puts("\n");
         puts("\033[0;34m[WORKER] Operatore Sleeping till day starts\033[0m");
         sem_op(semLavoratore, 8, -1);
+
         puts("[WORKER] Lavoratore è uscito dal semaforo.");
 
         // Stampa debug ogni giorno, anche se non trova sportello
@@ -155,10 +181,13 @@ int main(int argc, char *argv[]) {
         
         struct msgbuf message;
         int ret = msgrcv(msgId, &message, sizeof(Sportello), tipoLavoro, 0);
+
         if (ret == -1) {
             if (errno == ENOMSG) {
                 // Nessuno sportello disponibile per questo operatore oggi
                 printf("\033[1;34m\033[1m[WORKER] Lavoratore %d: Nessuno sportello disponibile oggi per tipoLavoro=%d\033[0m\n", getpid(), tipoLavoro);
+                // Attende la fine della giornata
+                sem_op(semLavoratore, 8, 0);
                 continue;
             }
             if (errno == EINTR && terminate) {
@@ -172,16 +201,19 @@ int main(int argc, char *argv[]) {
             
             continue;
         }
+
         printf("\033[1;34m\033[1m[WORKER] Lavoratore %d occupa lo sportello tipo %ld, %d...\033[0m\n", i, message.mtype, message.mtext.tipoLavoro);
         // Messaggio ricevuto, lavora
         key_t msgkeyOp = ftok("/tmp", 'V');
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
-
         // ricezione utente
-        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS);
+        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause);
 
         msgsnd(msgId, &message, sizeof(Sportello), 0);
+
+        // Attende la fine della giornata prima di ripartire
+        sem_op(semLavoratore, 8, 0);
         // Aggiorna statistiche
     }
 

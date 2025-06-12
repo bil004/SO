@@ -45,7 +45,7 @@ int sem_op(int semid, int sem_num, int sem_op) {
 
     if (semop(semid, &operazione, 1) == -1) {
         if (errno == EINTR) {
-            printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
+            printf("[USER] Processo %d: Semaforo interrotto da segnale.\n", getpid());
         }
         else{
             perror("Errore nel semaforo");
@@ -78,7 +78,9 @@ int main(int argc, char *argv[]) {
 
     //incrementa semaforo per informare il padre
     sem_op(semUtente, 3, 1);
-    //printf("Inizializzazione Terminata utente %d\n", i);
+    
+    printf("\033[1;31m\033[1m[USER] %d inizializzazione terminata\033[0m\n", getpid());
+
     //Attende la risposta del padre
     sem_op(semUtente, 7, -1);
 

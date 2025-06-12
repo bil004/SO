@@ -20,10 +20,8 @@ void errExit(char* s) {
     exit(EXIT_FAILURE);
 }
 
-void signal_handler(int sig)
-{
-    if (sig == SIGUSR1)
-    {
+void signal_handler(int sig) {
+    if (sig == SIGUSR1) {
         perror("[DIRECTOR] Direttore Ucciso");
         exit(EXIT_FAILURE); // Imposta il flag per terminare il processo
     }
@@ -178,7 +176,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         int semWaitInit = atoi(semWaitInit_str);
         sem_op(semWaitInit, 3, -1);
     }
-    puts("[DIRECTOR] Inizializzazione FIGLI Terminata");
+    puts("[DIRECTOR] Inizializzazione USER Terminata");
 
     //aspetta inizializzazione EROGATORE
     int semWaitInit = atoi(semWaitInit_str);

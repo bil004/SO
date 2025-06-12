@@ -16,6 +16,7 @@ typedef struct Config {
     int TIME_SERVICE;
     int P_SERV_MIN;
     int P_SERV_MAX;
+    int NOF_PAUSE;
     int sportelli[MAX_SPORTELLI];
     int lavoratori[MAX_LAVORATORI];
 } Config;
