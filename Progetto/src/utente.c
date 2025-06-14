@@ -30,10 +30,14 @@ typedef struct worker_msg {
 } WorkerMsg;
 
 volatile sig_atomic_t terminate = 0;
+volatile sig_atomic_t nextDay = 0;
 
 void signal_handler(int sig) {
     if (sig == SIGUSR1) {
         terminate = 1; // Imposta il flag per terminare il processo
+    }
+    if (sig == SIGUSR2){
+        nextDay = 1; // Imposta il flag per il cambio giorno
     }
 }
 
@@ -63,7 +67,7 @@ int main(int argc, char *argv[]) {
     }
 
     signal(SIGUSR1, signal_handler);
-
+    signal(SIGUSR2, signal_handler);
     
     // Attacca la memoria condivisa
     int shmId = atoi(argv[2]);
@@ -137,67 +141,77 @@ int main(int argc, char *argv[]) {
                 // Invio della richiesta
                 TicketMsg req = {1, service, 0, getpid()};
                 msgsnd(msgid, &req, sizeof(TicketMsg) - sizeof(long), 0);
-                puts("\033[1;31m\033[1m[USER] message send\033[0m");
+                if(terminate || nextDay){
+                    nextDay = 0;
+                }else{
+                    puts("\033[1;31m\033[1m[USER] message send\033[0m");
 
-                // Ricezione della richiesta
-                TicketMsg response;
-                msgrcv(msgid, &response, sizeof(TicketMsg) - sizeof(long), getpid(), 0);
-                printf("\033[1;31m\033[1m[USER] %d ha ricevuto il ticket %d\033[0m\n", getpid(), response.ticket);
+                    // Ricezione della richiesta
+                    TicketMsg response;
+                    msgrcv(msgid, &response, sizeof(TicketMsg) - sizeof(long), getpid(), 0);
+                    printf("\033[1;31m\033[1m[USER] %d ha ricevuto il ticket %d\033[0m\n", getpid(), response.ticket);
 
-                // Stampa a video solo il tipo di servizio deciso
-                switch (service) {
-                    case 1:
-                        printf("\033[1;31m\033[1m[USER] %d: Invio e ritiro pacchi (1)\033[0m\n", getpid());
-                        // sleep(tempiario[service]);
-                        break;
+                    // Stampa a video solo il tipo di servizio deciso
+                    switch (service) {
+                        case 1:
+                            printf("\033[1;31m\033[1m[USER] %d: Invio e ritiro pacchi (1)\033[0m\n", getpid());
+                            // sleep(tempiario[service]);
+                            break;
+                        
+                        case 2:
+                            printf("\033[1;31m\033[1m[USER] %d: Invio e lettere e raccomandate (2)\033[0m\n", getpid());
+                            break;
+                        
+                        case 3:
+                            printf("\033[1;31m\033[1m[USER] %d: Prelievi e versamenti Bancoposta (3)\033[0m\n", getpid());
+                            break;
+                        
+                        case 4:
+                            printf("\033[1;31m\033[1m[USER] %d: Pagamento bollettini postali (4)\033[0m\n", getpid());
+                            break;
+                        
+                        case 5:
+                            printf("\033[1;31m\033[1m[USER] %d: Acquisto prodotti finanziari (5)\033[0m\n", getpid());
+                            break;
+                        
+                        case 6:
+                            printf("\033[1;31m\033[1m[USER] %d: Acquisto orologi e braccialetti (6)\033[0m\n", getpid());
+                            break;
+                        
+                        default:
+                            puts("\033[1;31m[USER] Service not found\033[0m");
+                            break;
+                    }
+
+                    int orario = (rand()%360) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 0 minuti e 6 ore dal momento della decisione
+                    nanosleep((const struct timespec[]){{0, orario}}, NULL);
+
+                    // --------------CODA MSG USER-WORKER
+                    key_t msgkeyOp = ftok("/tmp", 'V');
+                    int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
+
+                    printf("\033[1;31m\033[1m[USER] Immissione in coda da parte di %d...\033[0m\n", getpid());
                     
-                    case 2:
-                        printf("\033[1;31m\033[1m[USER] %d: Invio e lettere e raccomandate (2)\033[0m\n", getpid());
-                        break;
+                    // Invio user in coda
+                    WorkerMsg w = {service, getpid()};
+
+                    printf("\033[1;31m\033[1m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
+                    msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
+                    if(terminate || nextDay){
+                        nextDay = 0;
+                    }
+                    else{
+                        printf("\033[1;31m\033[1m[USER] Fine invio messaggio con pid: %d\033[0m\n", w.pid);
+                        
+                        puts("\033[1;31m\033[1m[USER] ha inviato la richiesta!\033[0m");
+
+                        // Attesa risposta da operatore
+                        WorkerMsg wResp;
+                        msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
+                        printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
+                    }
                     
-                    case 3:
-                        printf("\033[1;31m\033[1m[USER] %d: Prelievi e versamenti Bancoposta (3)\033[0m\n", getpid());
-                        break;
-                    
-                    case 4:
-                        printf("\033[1;31m\033[1m[USER] %d: Pagamento bollettini postali (4)\033[0m\n", getpid());
-                        break;
-                    
-                    case 5:
-                        printf("\033[1;31m\033[1m[USER] %d: Acquisto prodotti finanziari (5)\033[0m\n", getpid());
-                        break;
-                    
-                    case 6:
-                        printf("\033[1;31m\033[1m[USER] %d: Acquisto orologi e braccialetti (6)\033[0m\n", getpid());
-                        break;
-                    
-                    default:
-                        puts("\033[1;31m[USER] Service not found\033[0m");
-                        break;
                 }
-
-                int orario = (rand()%360) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 0 minuti e 6 ore dal momento della decisione
-                nanosleep((const struct timespec[]){{0, orario}}, NULL);
-
-                // --------------CODA MSG USER-WORKER
-                key_t msgkeyOp = ftok("/tmp", 'V');
-                int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
-
-                printf("\033[1;31m\033[1m[USER] Immissione in coda da parte di %d...\033[0m\n", getpid());
-                
-                // Invio user in coda
-                WorkerMsg w = {service, getpid()};
-
-                printf("\033[1;31m\033[1m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
-                msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
-                printf("\033[1;31m\033[1m[USER] Fine invio messaggio con pid: %d\033[0m\n", w.pid);
-                
-                puts("\033[1;31m\033[1m[USER] ha inviato la richiesta!\033[0m");
-
-                // Attesa risposta da operatore
-                WorkerMsg wResp;
-                msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
-                printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
             }
             else 
                 printf("\033[1;31m\033[1m[USER] %d non va alla posta (servizio non disponibile)\033[0m\n", getpid());

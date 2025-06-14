@@ -52,6 +52,13 @@ int main() {
         exit(1);
     }
 
+    // Crea memoria condivisa per tener traccia delle statistiche
+    int shm_id_Stats = shmget(IPC_PRIVATE, sizeof(Config), IPC_CREAT | 0666);
+    if (shm_id == -1) {
+        perror("shmget");
+        exit(1);
+    }
+
     // Attacca la memoria condivisa
     Config *shared_memory = (Config *)shmat(shm_id, NULL, 0);
     if (shared_memory == (Config *)-1) {

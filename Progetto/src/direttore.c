@@ -113,7 +113,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     
 
     //-------------------Operatori-----------------
-    pid_t* opPid = malloc(sizeof(pid_t) * (shared_memory->NOF_WORKERS));
+    pid_t* opUsrPid = malloc(sizeof(pid_t) * (shared_memory->NOF_WORKERS + shared_memory->NOF_USERS));
     char tipiWorkers[64];
 
     int k = 0;
@@ -141,7 +141,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
             default:
                 pid_array[j] = Lavoratore;
-                opPid[k] = Lavoratore;
+                opUsrPid[k] = Lavoratore;
                 k++;
                 j++;
                 break;
@@ -165,8 +165,10 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 break;
 
             default:
+                opUsrPid[k] = Utente;
                 pid_array[j] = Utente;
                 j++;
+                k++;
                 break;
         }
     }
@@ -228,6 +230,12 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         int result;
         while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {}
 
+        // Clear user-Erogatore message queue
+        key_t msgkeyErog = ftok("/tmp", 'U');
+        int msgidErog = msgget(msgkeyErog, 0666 | IPC_CREAT);
+        
+        while ((result = msgrcv(msgidErog, &wmsg, sizeof(wmsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
+
         // Clear user-worker message queue
         key_t msgkeyOp = ftok("/tmp", 'V');
         int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
@@ -236,12 +244,12 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         //Operatore esce da msgRcv per sportelli
         if(shared_memory->DAYS_LEFT!=0) {
-            for (int i = 0; i < shared_memory->NOF_WORKERS; i++) {
-                if (kill(opPid[i], 0) == 0) {
-                    if (kill(opPid[i], SIGUSR2) == -1) {
+            for (int i = 0; i < shared_memory->NOF_WORKERS + shared_memory->NOF_USERS; i++) {
+                if (kill(opUsrPid[i], 0) == 0) {
+                    if (kill(opUsrPid[i], SIGUSR2) == -1) {
                         perror("[DIRECTOR] errore invio segnale");
                     }
-                    else printf("\033[1;32m[DIRECTOR] Operatore segnale uscita coda a PID: %d\033[0m\n", opPid[i]);
+                    else printf("\033[1;32m[DIRECTOR] Figlio segnale uscita PID: %d\033[0m\n", opUsrPid[i]);
                 }
             }
             msg_enqueue(shared_memory, msgId, &message);
