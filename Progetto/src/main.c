@@ -53,16 +53,23 @@ int main() {
     }
 
     // Crea memoria condivisa per tener traccia delle statistiche
-    int shm_id_Stats = shmget(IPC_PRIVATE, sizeof(Config), IPC_CREAT | 0666);
-    if (shm_id == -1) {
+    int shm_id_Stats = shmget(IPC_PRIVATE, sizeof(Stats), IPC_CREAT | 0666);
+    if (shm_id_Stats == -1) {
         perror("shmget");
         exit(1);
     }
 
-    // Attacca la memoria condivisa
+    // Attacca la memoria condivisa (Config)
     Config *shared_memory = (Config *)shmat(shm_id, NULL, 0);
     if (shared_memory == (Config *)-1) {
-        perror("Errore nell'attacco alla memoria condivisa");
+        perror("Errore nell'attacco alla memoria condivisa (Config)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Attacca la memoria condivisa (Stats)
+    Stats *smStats = (Stats *)shmat(shm_id_Stats, NULL, 0);
+    if (smStats == (void *)-1) {
+        perror("Errore nell'attacco alla memoria condivisa (Stats)");
         exit(EXIT_FAILURE);
     }
 
@@ -99,10 +106,11 @@ int main() {
     if (pid == 0) {
         pid = getpid();
         printf("\033[1;32m\033[1mDirettore con pid:%d\033[0m\n", pid);
-        char shm_id_str[10], semWaitInit_str[10];
+        char shm_id_str[10], semWaitInit_str[10], shm_id_Stats_str[10];
         snprintf(shm_id_str, 10, "%d", shm_id);
+        snprintf(shm_id_Stats_str, 10, "%d", shm_id_Stats);
         snprintf(semWaitInit_str, 10, "%d", semWaitInit);
-        execl("./direttore", "./direttore", semWaitInit_str, shm_id_str, CONFFILE, NULL);
+        execl("./direttore", "./direttore", semWaitInit_str, shm_id_str, shm_id_Stats_str, CONFFILE, NULL);
         perror("execl");
         exit(1);
     }

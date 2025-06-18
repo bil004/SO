@@ -61,7 +61,7 @@ int sem_op(int semid, int sem_num, int sem_op) {
 // uso la pipe per ricevere i dati da erogatore_ticket
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
+    if (argc != 5) {
         fprintf(stderr, "Incorrect number of arg\n");
         exit(1);
     }
@@ -76,7 +76,15 @@ int main(int argc, char *argv[]) {
         perror("Errore nell'attacco alla memoria condivisa");
         exit(EXIT_FAILURE);
     }
-    
+
+    // Attacca la memoria condivisa
+    int shmId_Stats = atoi(argv[4]);
+    Stats *smStats = (Stats *)shmat(shmId_Stats, NULL, 0);
+    if (smStats == (Stats *)-1) {
+        perror("Errore nell'attacco alla memoria condivisa (Stats)");
+        exit(EXIT_FAILURE);
+    }
+
     //FINE INIZIALIZZAZIONE
     int semUtente = atoi(argv[1]);
 
@@ -209,8 +217,10 @@ int main(int argc, char *argv[]) {
                         WorkerMsg wResp;
                         msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
                         printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
+
+                        smStats->SERV_TOT_S[service]++;
+                        smStats->SERV_GIORNO_S[service]++;
                     }
-                    
                 }
             }
             else 

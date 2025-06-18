@@ -101,6 +101,16 @@
     - Aggiunto gestione fine giornata in User
     - Iniziato struct per le statistiche
 
+15/06
+    - Abbiamo provato a mettere degli array dinamici, ma senza successo
+    - abbiamo provato a sostituire gli array presenti in shared_memory con le pipe, ma senza successo
+    - il main non va non so perché
+
+18/06
+    - Abbiamo deciso che il progetto va bene così (no pipe, no malloc xké inutilmente complesse in shared memory)
+    - Aumentato le nostre costanti
+    - Impostato la shared memory per le statistiche (con l'aumento di alcuni valori nella sm)
+
 TO DO-->
     - Produrre 2 file (config_timout.conf e config_explode.conf) in grado di generare la terminazione dei file in caso di fine gg e di caso di EXPLODE_THRESHOLD
     - Fare la parte dell'aggiornamento delle statistiche

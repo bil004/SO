@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define MAX_SPORTELLI 32
-#define MAX_LAVORATORI 64
+#define MAX_SPORTELLI 128
+#define MAX_LAVORATORI 128
 #define NUM_SERVIZI 6
 
 typedef struct Config {
@@ -23,6 +23,7 @@ typedef struct Config {
 } Config;
 
 typedef struct Stats {
+    /*
     // Utenti
     int UTENTI_TOT;
     float UTENTI_GIORNO;
@@ -38,6 +39,7 @@ typedef struct Stats {
     float WAIT_GIORNO;//attesa degli user nel giorno
     float DUR_TOT;//tempo medio erogazione servizi in sim
     float DUR_GIORNO;//tempo medio erogazione servizi in gg
+    */
 
     // Per servizio
     int SERV_TOT_S[NUM_SERVIZI];
@@ -48,6 +50,11 @@ typedef struct Stats {
     float WAIT_GIORNO_S[NUM_SERVIZI];
     float DUR_TOT_S[NUM_SERVIZI];
     float DUR_GIORNO_S[NUM_SERVIZI];
+
+    /*
+        - Per WAIT_GIORNO_S, ogni user aggiunge in una var (in memoria condivisa) il suo tempo impiegato
+        - UTENTI_TOT la calcoliamo tramite SERV_TOT_S
+    */
 
     // Operatori
     int OP_GIORNO;

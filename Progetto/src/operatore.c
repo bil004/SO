@@ -125,7 +125,7 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 6) {
+    if (argc != 7) {
         fprintf(stderr, "[WORKER] Incorrect number of arg\n");
         exit(1);
     }

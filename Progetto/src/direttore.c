@@ -14,6 +14,7 @@
 #include <sys/msg.h>
 
 #include "../include/config.h"
+#include "../include/functions.h"
 
 void errExit(char* s) {
     perror(s);
@@ -73,11 +74,19 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message){
     }
 }
 
-void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
+void setValues(Stats *smStats) {
+    for (int i = 0; i < NUM_SERVIZI; i++) {
+        smStats->SERV_GIORNO_S[i] = 0;
+        smStats->FAIL_GIORNO_S[i] = 0;
+        smStats->WAIT_GIORNO_S[i] = 0;
+        smStats->DUR_GIORNO_S[i] = 0;
+    }
+}
+
+void direttore(char* semWaitInit_str, char* shmid_str, char* shmid_Stats_str, Config* shared_memory, Stats* smStats) {
     pid_t* pid_array = malloc(sizeof(pid_t) * (shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1));
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!! Main in altro file, direttore chiamato con execl.., parametri passati nell'argv[] !!!!!!!!!!!!!!!!
     int j = 0;
-    //Puntatore a memoria condivisa
 
     //Creazione processi figli
     //-----------------Erogatore Ticket------------------
@@ -90,7 +99,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 
         case 0:
             printf("\033[1;32m[DIRECTOR] Erogatore ticket con pid:%d\033[0m\n", getpid());
-            execl("./erogatoreTicket", "./erogatoreTicket", semWaitInit_str, shmid_str, NULL);
+            execl("./erogatoreTicket", "./erogatoreTicket", semWaitInit_str, shmid_str, shmid_Stats_str, NULL);
             errExit("execl failure!");
             break;
             
@@ -135,7 +144,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
                 shared_memory->lavoratori[k] = tipolavoro;
                 char tipoLavoro_str[64];
                 sprintf(tipoLavoro_str, "%d", tipolavoro);
-                execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, NULL);
+                execl("./operatore", "./operatore", semWaitInit_str, shmid_str, I, msgId_str, tipoLavoro_str, shmid_Stats_str, NULL);
                 errExit("[DIRECTOR] execl failure!");
                 break;
 
@@ -160,7 +169,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
             case 0:
                 char I[64];
                 sprintf(I, "%d", i);
-                execl("./utente", "./utente", semWaitInit_str, shmid_str, I, NULL);
+                execl("./utente", "./utente", semWaitInit_str, shmid_str, I, shmid_Stats_str, NULL);
                 errExit("[DIRECTOR] execl failure!");
                 break;
 
@@ -192,13 +201,23 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
     }
     printf("\033[1;32m[DIRECTOR] Inizializzazione LAVORATORI Terminata\033[0m\n");
 
+    for (int i = 0; i < NUM_SERVIZI; i++) {
+        smStats->SERV_TOT_S[i] = 0;
+        smStats->SERV_FAIL_S[i] = 0;
+        smStats->WAIT_TOT_S[i] = 0;
+        smStats->DUR_TOT_S[i] = 0;
+    }
+
     puts("\nSESSIONE INIZIATA");
     
     // creare un semaforo mutex giornata attiva
     for (int giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
-        // aggiorna il semaforo per indicare che la giornata è iniziata e waita
+        // resetta i valori giornalieri di smStats
+        setValues(smStats);
+
         printf("\033[1;32m\n[DIRECTOR] Giorno %d iniziato.\033[0m\n", giorno + 1);
-        
+
+        // aggiorna il semaforo per indicare che la giornata è iniziata e waita
         semctl(semWaitInit, 8, SETVAL, 1+ shared_memory->NOF_WORKERS + shared_memory->NOF_USERS); //reimposta il semaforo fine giornata a 1 (giornata non finita)
 
         // reimposta i semafori
@@ -270,19 +289,16 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
         }
 
         nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
-
-        // direttore aspetta segnale semaforo da operatore di concluso servizio ultimo utente
-        // Quando riceve segnale, dice all'operatore di smettere di servire altri utenti
         
         // Aggiorna statistiche giornaliere
 
         /*sem_wait(&semid);
-        printf("[Direttore] Statistiche al termine del giorno %d:\n", giorno + 1);
-        for (int i = 0; i < 6; i++) {
-            //Scrittura di tutte le statistiche aggiornatae
-        }
-        sem_signal(semid, 6);
-    */
+            printf("[Direttore] Statistiche al termine del giorno %d:\n", giorno + 1);
+            for (int i = 0; i < 6; i++) {
+                //Scrittura di tutte le statistiche aggiornatae
+            }
+            sem_signal(semid, 6);
+        */
     }
 
 
@@ -314,7 +330,7 @@ void direttore(char* semWaitInit_str, char* shmid_str, Config* shared_memory){
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
+    if (argc != 5) {
         fprintf(stderr, "[DIRECTOR] Incorrect number of arg\n");
         exit(1);
     }
@@ -345,7 +361,15 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    direttore(argv[1], argv[2], shared_memory);
+    int shm_id_Stats = atoi(argv[3]);
+
+    Stats *smStats = (Stats *)shmat(shm_id_Stats, NULL, 0);
+    if (smStats == (Stats *)-1) {
+        perror("Errore nell'attacco alla memoria condivisa (Stats)");
+        exit(EXIT_FAILURE);
+    }
+
+    direttore(argv[1], argv[2], argv[3], shared_memory, smStats);
     // Simula la durata della giornata
     
     if (shmdt(shared_memory) == -1) {
