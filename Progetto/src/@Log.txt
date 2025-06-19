@@ -111,6 +111,9 @@
     - Aumentato le nostre costanti
     - Impostato la shared memory per le statistiche (con l'aumento di alcuni valori nella sm)
 
+19/06
+    - Abbiamo sistemato i vari file .h
+
 TO DO-->
     - Produrre 2 file (config_timout.conf e config_explode.conf) in grado di generare la terminazione dei file in caso di fine gg e di caso di EXPLODE_THRESHOLD
     - Fare la parte dell'aggiornamento delle statistiche

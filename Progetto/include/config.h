@@ -4,6 +4,35 @@
 #define MAX_SPORTELLI 128
 #define MAX_LAVORATORI 128
 #define NUM_SERVIZI 6
+#define ST 6
+
+typedef struct sportello{
+    int tipoLavoro;
+} Sportello;
+
+struct msgbuf {
+    long mtype;
+    Sportello mtext;
+};
+
+typedef struct workerMsg {
+    long mtype;
+    pid_t pid;
+} WorkerMsg;
+
+typedef struct ticket_msg {
+    long mtype;      // Tipo messaggio: 1 per richiesta, PID utente per risposta
+    int servizio;    // Tipo di servizio richiesto
+    int ticket;      // Numero del ticket (solo nella risposta)
+    pid_t pid;       // PID dell'utente (solo nella richiesta)
+} TicketMsg;
+
+typedef struct ticket {
+    int type;
+    int time;
+} Ticket,*TicketPtr;
+
+int tempiario[ST] = {10, 8, 6, 8, 20, 20};
 
 typedef struct Config {
     int NOF_WORKER_SEATS;

@@ -15,19 +15,7 @@
 #include <sys/msg.h>
 
 #include "../include/config.h"
-#include "../include/operatore.h"
-
-typedef struct ticket_msg {
-    long mtype;      // Tipo messaggio: 1 per richiesta, PID utente per risposta
-    int servizio;    // Tipo di servizio richiesto
-    int ticket;      // Numero del ticket (solo nella risposta)
-    pid_t pid;       // PID dell'utente (solo nella richiesta)
-} TicketMsg;
-
-typedef struct worker_msg {
-    long mtype;      // Tipo messaggio: service per richiesta, PID utente per risposta
-    pid_t pid;       // PID dell'utente (solo nella richiesta)
-} WorkerMsg;
+#include "../include/functions.h"
 
 volatile sig_atomic_t terminate = 0;
 volatile sig_atomic_t nextDay = 0;
@@ -41,7 +29,7 @@ void signal_handler(int sig) {
     }
 }
 
-int sem_op(int semid, int sem_num, int sem_op) {
+void sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
     operazione.sem_num = sem_num; // Indice del semaforo nel set
     operazione.sem_op = sem_op;   // Operazione (incremento/decremento/attesa)
@@ -139,7 +127,6 @@ int main(int argc, char *argv[]) {
             
             if (foundS && foundW) {
                 // esegue erogatoreTicket
-                // nello switch utilizzerà il tempiario[] disponibile in erogatore_ticket
                 printf("\033[1;31m\033[1m[USER] %d va alla posta\033[0m\n", getpid());
 
                 // --------------CODA MSG USER-TICKET
@@ -163,7 +150,6 @@ int main(int argc, char *argv[]) {
                     switch (service) {
                         case 1:
                             printf("\033[1;31m\033[1m[USER] %d: Invio e ritiro pacchi (1)\033[0m\n", getpid());
-                            // sleep(tempiario[service]);
                             break;
                         
                         case 2:

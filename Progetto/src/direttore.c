@@ -28,20 +28,6 @@ void signal_handler(int sig) {
     }
 }
 
-typedef struct sportello{
-    int tipoLavoro;
-} Sportello;
-
-struct msgbuf {
-    long mtype;
-    Sportello mtext;
-};
-
-struct WorkerMsg {
-    long mtype;
-    pid_t pid;
-} wmsg;
-
 void sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
     operazione.sem_num = sem_num; // Indice del semaforo nel set
@@ -253,13 +239,15 @@ void direttore(char* semWaitInit_str, char* shmid_str, char* shmid_Stats_str, Co
         key_t msgkeyErog = ftok("/tmp", 'U');
         int msgidErog = msgget(msgkeyErog, 0666 | IPC_CREAT);
         
-        while ((result = msgrcv(msgidErog, &wmsg, sizeof(wmsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
+        WorkerMsg wsmg;
+        while ((result = msgrcv(msgidErog, &wsmg, sizeof(WorkerMsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
 
         // Clear user-worker message queue
         key_t msgkeyOp = ftok("/tmp", 'V');
         int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
         
-        while ((result = msgrcv(msgidOp, &wmsg, sizeof(wmsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
+        
+        while ((result = msgrcv(msgidOp, &wsmg, sizeof(WorkerMsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
 
         //Operatore esce da msgRcv per sportelli
         if(shared_memory->DAYS_LEFT!=0) {

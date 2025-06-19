@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 
 #include"../include/config.h"
+#include "../include/functions.h"
 
 #define CONFFILE "../src/post_office.conf"
 

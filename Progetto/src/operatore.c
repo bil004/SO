@@ -15,25 +15,11 @@
 #include <signal.h>
 
 #include "../include/config.h"
-#include "../include/operatore.h"
+#include "../include/functions.h"
 
 volatile sig_atomic_t terminate = 0;
 volatile sig_atomic_t nextDay = 0;
 volatile sig_atomic_t noJob = 0;
-
-typedef struct sportello {
-    int tipoLavoro;
-} Sportello;
-
-struct msgbuf {
-    long mtype;
-    Sportello mtext;
-};
-
-typedef struct worker_msg {
-    long mtype;      // Tipo messaggio: service per richiesta, PID utente per risposta
-    pid_t pid;       // PID dell'utente (solo nella richiesta)
-} WorkerMsg;
 
 void signal_handler(int sig) {
     if (sig == SIGUSR1) {
@@ -46,7 +32,7 @@ void signal_handler(int sig) {
     }
 }
 
-int sem_op(int semid, int sem_num, int sem_op) {
+void sem_op(int semid, int sem_num, int sem_op) {
     struct sembuf operazione;
     operazione.sem_num = sem_num; // Indice del semaforo nel set
     operazione.sem_op = sem_op;   // Operazione (incremento/decremento/attesa)
