@@ -312,6 +312,15 @@ void direttore(char* semWaitInit_str, char* shmid_str, char* shmid_Stats_str, Co
         exit(EXIT_FAILURE);
     }
 
+    puts("\n");
+
+    for (int i = 0; i < NUM_SERVIZI; i++) {
+        printf("SERV_TOT_S: lavoro %d, %d\n", i, smStats->SERV_TOT_S[i]);
+        printf("SERV_FAIL_S: lavoro %d, %d\n", i, smStats->SERV_FAIL_S[i]);
+        printf("SERV_GIORNO_S: lavoro %d, %.2f\n", i, smStats->SERV_GIORNO_S[i]);
+    }
+
+    puts("");
     printf("\033[1;32m[DIRECTOR] direttore finito\033[0m\n");
 
 

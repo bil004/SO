@@ -202,10 +202,15 @@ int main(int argc, char *argv[]) {
                         // Attesa risposta da operatore
                         WorkerMsg wResp;
                         msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
-                        printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
-
-                        smStats->SERV_TOT_S[service]++;
-                        smStats->SERV_GIORNO_S[service]++;
+                        if(terminate || nextDay){
+                            printf("\033[1;31m\033[1m[USER] Utente %d è rimasto in coda ...\033[0m\n", getpid());
+                            smStats->SERV_FAIL_S[service]++;
+                            nextDay = 0;
+                        } else {
+                            printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
+                            smStats->SERV_TOT_S[service]++;
+                            smStats->SERV_GIORNO_S[service]++;
+                        }    
                     }
                 }
             }

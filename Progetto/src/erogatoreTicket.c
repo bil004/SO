@@ -40,8 +40,6 @@ void sem_op(int semid, int sem_num, int sem_op) {
     }
 }
 
-// devo prendere i valori dal padre e poi inserirli nel ticket
-
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         fprintf(stderr, "[TICKET] Incorrect number of arg\n");

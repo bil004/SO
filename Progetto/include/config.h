@@ -4,7 +4,6 @@
 #define MAX_SPORTELLI 128
 #define MAX_LAVORATORI 128
 #define NUM_SERVIZI 6
-#define ST 6
 
 typedef struct sportello{
     int tipoLavoro;
@@ -32,7 +31,7 @@ typedef struct ticket {
     int time;
 } Ticket,*TicketPtr;
 
-int tempiario[ST] = {10, 8, 6, 8, 20, 20};
+int tempiario[NUM_SERVIZI] = {10, 8, 6, 8, 20, 20};
 
 typedef struct Config {
     int NOF_WORKER_SEATS;
@@ -71,14 +70,14 @@ typedef struct Stats {
     */
 
     // Per servizio
-    int SERV_TOT_S[NUM_SERVIZI];
-    int SERV_FAIL_S[NUM_SERVIZI];
-    float SERV_GIORNO_S[NUM_SERVIZI];
-    float FAIL_GIORNO_S[NUM_SERVIZI];
-    float WAIT_TOT_S[NUM_SERVIZI];
-    float WAIT_GIORNO_S[NUM_SERVIZI];
-    float DUR_TOT_S[NUM_SERVIZI];
-    float DUR_GIORNO_S[NUM_SERVIZI];
+    int SERV_TOT_S[NUM_SERVIZI]; // FATTO
+    int SERV_FAIL_S[NUM_SERVIZI]; // FATTO
+    float SERV_GIORNO_S[NUM_SERVIZI];  // SBAGLIATO
+    float FAIL_GIORNO_S[NUM_SERVIZI];  // DA FARE
+    float WAIT_TOT_S[NUM_SERVIZI];   // DA FARE
+    float WAIT_GIORNO_S[NUM_SERVIZI];   // DA FARE
+    float DUR_TOT_S[NUM_SERVIZI];   // DA FARE
+    float DUR_GIORNO_S[NUM_SERVIZI];   // DA FARE
 
     /*
         - Per WAIT_GIORNO_S, ogni user aggiunge in una var (in memoria condivisa) il suo tempo impiegato
