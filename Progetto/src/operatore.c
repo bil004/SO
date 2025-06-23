@@ -19,16 +19,13 @@
 
 volatile sig_atomic_t terminate = 0;
 volatile sig_atomic_t nextDay = 0;
-volatile sig_atomic_t noJob = 0;
 
 void signal_handler(int sig) {
     if (sig == SIGUSR1) {
         terminate = 1; // Imposta il flag per terminare il processo
-        noJob = 1;
     }
     if (sig == SIGUSR2){
         nextDay = 1;
-        noJob = 1;
     }
 }
 
@@ -68,43 +65,43 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         WorkerMsg response;
         int ret = msgrcv(msgid, &response, sizeof(WorkerMsg) - sizeof(long), tipoLavoro, 0);
         if (ret == -1) {
-            if (errno == EINTR && terminate) {
-                printf("\033[1;34m\033[1m[WORKER] msgrcv interrotto da segnale, termino.\033[0m\n");
-                break;
-            }
-            if (errno == EINTR && nextDay) {
-                nextDay = 0;
-                break;
+            if (errno == EINTR) {
+                if (terminate) {
+                    printf("\033[1;34m\033[1m[WORKER] msgrcv interrotto da segnale, termino.\033[0m\n");
+                    nextDay = 0;
+                    break;
+                }
+                if (nextDay) {
+                    nextDay = 0;
+                    break;
+                }
             }
             if (errno == ENOMSG) {
-                break;
+                // Nessun lavoro disponibile
+                printf("\033[1;34m\033[1m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i); 
+                nextDay = 0;
+                continue;
             }
             // altri errori
             perror("[WORKER] msgrcv error");
-            break;
+            nextDay = 0;
+            exit(1);
         }
-        if(terminate) break;
-        if(noJob){
-            printf("\033[1;34m\033[1m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i);
-            noJob = 0;
-            break;
-        }
-        
+
+        if (terminate) break;
+
         if (response.pid > 0)
             printf("\033[1;34m\033[1m[WORKER] Lavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
 
-        int tmpLav = tempiario[response.mtype];
-        int tmpMin = tmpLav/2; 
-
-        // Tempo
+        int tmpLav = tempario[response.mtype];
+        int tmpMin = tmpLav/2;
         srand(time(0)^getpid());
         int time = (rand()%tmpLav) + tmpMin;
-
         nanosleep((const struct timespec[]){{0, time * nanoSec}}, NULL);
 
-        if(terminate) break;
-        // Worker finisce, invia la risposta a user
-        WorkerMsg end = {response.pid, 0}; // 0 --> il PID è inutile dopo
+        if (terminate) break;
+
+        WorkerMsg end = {response.pid, 0};
         msgsnd(msgid, &end, sizeof(WorkerMsg) - sizeof(long), 0);
     }
     printf("\033[1;34m\033[1m[WORKER] Lavoratore %d ha finito di lavorare\033[0m\n", i);
@@ -155,7 +152,7 @@ int main(int argc, char *argv[]) {
         puts("\033[0;34m[WORKER] Operatore Sleeping till day starts\033[0m");
         sem_op(semLavoratore, 8, -1);
 
-        puts("[WORKER] Lavoratore è uscito dal semaforo.");
+        puts("\033[0;34m[WORKER] Lavoratore è uscito dal semaforo.\033[0m");
 
         // Stampa debug ogni giorno, anche se non trova sportello
         printf("\033[0;34m[WORKER] Lavoratore %d, PID: %d, tipoLavoro=%d\033[0m\n", i, getpid(), tipoLavoro);
@@ -183,6 +180,7 @@ int main(int argc, char *argv[]) {
             if (errno == EINTR && nextDay) {
                 printf("\033[1;34m\033[1m[WORKER] Processo %d: msgrcv interrotto. Si passa al gg successivo.\033[0m\n", getpid());
                 nextDay = 0;
+                // non fare nulla, riprova nel prossimo ciclo
             }
             
             continue;

@@ -96,6 +96,11 @@ int main(int argc, char *argv[]) {
             printf("\033[1;31m\033[1m[USER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());
             break;
         }
+
+        if (nextDay) {
+            nextDay = 0;
+            continue;
+        }
         // Probabilità della decisione dell'utente
         int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
         srand(time(NULL)^getpid());

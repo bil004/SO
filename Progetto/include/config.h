@@ -31,7 +31,7 @@ typedef struct ticket {
     int time;
 } Ticket,*TicketPtr;
 
-int tempiario[NUM_SERVIZI] = {10, 8, 6, 8, 20, 20};
+int tempario[NUM_SERVIZI] = {10, 8, 6, 8, 20, 20};
 
 typedef struct Config {
     int NOF_WORKER_SEATS;
