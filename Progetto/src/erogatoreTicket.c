@@ -41,7 +41,7 @@ void sem_op(int semid, int sem_num, int sem_op) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
+    if (argc != 5) {
         fprintf(stderr, "[TICKET] Incorrect number of arg\n");
         exit(1);
     }

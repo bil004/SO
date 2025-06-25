@@ -50,51 +50,32 @@ typedef struct Config {
     int lavoratori[MAX_LAVORATORI];
 } Config;
 
-typedef struct Stats {
-    /*
-    // Utenti
-    int UTENTI_TOT;
-    float UTENTI_GIORNO;
+typedef struct StatsDay {
+    int utenti_serviti; // utenti serviti nella giornata
+    int servizi_erogati[NUM_SERVIZI]; // per tipo servizio
+    int servizi_non_erogati[NUM_SERVIZI];
+    float tempo_attesa_utenti; // somma tempi attesa utenti nella giornata
+    float tempo_erogazione_servizi[NUM_SERVIZI]; // per tipo servizio
+    int operatori_attivi; // operatori attivi nella giornata
+    float pause_giornata; // pause effettuate nella giornata
+    float rapporto_op_sportelli[MAX_SPORTELLI]; // rapporto per ogni sportello
+} StatsDay;
 
-    // Servizi globali
-    int SERV_TOT;
-    int SERV_FAIL;
-    float SERV_GIORNO;
-    float FAIL_GIORNO;
-
-    // Tempi globali
-    float WAIT_TOT;//attesa degli user nella simulazione
-    float WAIT_GIORNO;//attesa degli user nel giorno
-    float DUR_TOT;//tempo medio erogazione servizi in sim
-    float DUR_GIORNO;//tempo medio erogazione servizi in gg
-    */
-
-    // Per servizio
-    int SERV_TOT_S[NUM_SERVIZI]; // FATTO
-    int SERV_FAIL_S[NUM_SERVIZI]; // FATTO
-    float SERV_GIORNO_S[NUM_SERVIZI];  // SBAGLIATO
-    float FAIL_GIORNO_S[NUM_SERVIZI];  // DA FARE
-    float WAIT_TOT_S[NUM_SERVIZI];   // DA FARE
-    float WAIT_GIORNO_S[NUM_SERVIZI];   // DA FARE
-    float DUR_TOT_S[NUM_SERVIZI];   // DA FARE
-    float DUR_GIORNO_S[NUM_SERVIZI];   // DA FARE
-
-    /*
-        - Per WAIT_GIORNO_S, ogni user aggiunge in una var (in memoria condivisa) il suo tempo impiegato
-        - UTENTI_TOT la calcoliamo tramite SERV_TOT_S
-    */
-
-    // Operatori
-    int OP_GIORNO;
-    int OP_TOT;
-
-    // Pause
-    float PAUSE_GIORNO;
-    int PAUSE_TOT;
-
-    // Rapporto operatori/sportelli [giorno][sportello]
-    //float OP_SPORT_RATIO[NUM_GIORNI][NUM_SPORTELLI];
-
-} Stats;
+typedef struct StatsSim {
+    int utenti_serviti_tot; // utenti serviti totali
+    float utenti_serviti_media_giorno; // media utenti serviti al giorno
+    int servizi_erogati_tot[NUM_SERVIZI];
+    int servizi_non_erogati_tot[NUM_SERVIZI];
+    float servizi_erogati_media_giorno[NUM_SERVIZI];
+    float servizi_non_erogati_media_giorno[NUM_SERVIZI];
+    float tempo_attesa_utenti_tot; // somma tempi attesa utenti in sim
+    float tempo_erogazione_servizi_tot[NUM_SERVIZI];
+    float tempo_erogazione_servizi_media_giorno[NUM_SERVIZI];
+    int operatori_attivi_tot;
+    float operatori_attivi_media_giorno;
+    float pause_tot;
+    float pause_media_giorno;
+    float rapporto_op_sportelli_media[MAX_SPORTELLI];
+} StatsSim;
 
 #endif

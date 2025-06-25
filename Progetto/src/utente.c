@@ -49,7 +49,7 @@ void sem_op(int semid, int sem_num, int sem_op) {
 // uso la pipe per ricevere i dati da erogatore_ticket
 
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
+    if (argc != 6) {
         fprintf(stderr, "Incorrect number of arg\n");
         exit(1);
     }
@@ -66,10 +66,16 @@ int main(int argc, char *argv[]) {
     }
 
     // Attacca la memoria condivisa
-    int shmId_Stats = atoi(argv[4]);
-    Stats *smStats = (Stats *)shmat(shmId_Stats, NULL, 0);
-    if (smStats == (Stats *)-1) {
-        perror("Errore nell'attacco alla memoria condivisa (Stats)");
+    int shmId_StatsDay = atoi(argv[4]);
+    int shmId_StatsSim = atoi(argv[5]);
+    StatsDay *statsDay = (StatsDay *)shmat(shmId_StatsDay, NULL, 0);
+    if (statsDay == (StatsDay *)-1) {
+        perror("Errore nell'attacco alla memoria condivisa (StatsDay)");
+        exit(EXIT_FAILURE);
+    }
+    StatsSim *statsSim = (StatsSim *)shmat(shmId_StatsSim, NULL, 0);
+    if (statsSim == (StatsSim *)-1) {
+        perror("Errore nell'attacco alla memoria condivisa (StatsSim)");
         exit(EXIT_FAILURE);
     }
 
@@ -182,17 +188,20 @@ int main(int argc, char *argv[]) {
                             break;
                     }
 
-                    int orario = (rand()%360) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 0 minuti e 6 ore dal momento della decisione
+                    int orario = (rand()%180) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 0 minuti e 3 ore dal momento della decisione
                     nanosleep((const struct timespec[]){{0, orario}}, NULL);
-
+                    
                     // --------------CODA MSG USER-WORKER
                     key_t msgkeyOp = ftok("/tmp", 'V');
                     int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
                     printf("\033[1;31m\033[1m[USER] Immissione in coda da parte di %d...\033[0m\n", getpid());
                     
+
                     // Invio user in coda
                     WorkerMsg w = {service, getpid()};
+                    
+                    clock_t start = clock();
 
                     printf("\033[1;31m\033[1m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
                     msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
@@ -207,14 +216,26 @@ int main(int argc, char *argv[]) {
                         // Attesa risposta da operatore
                         WorkerMsg wResp;
                         msgrcv(msgidOp, &wResp, sizeof(WorkerMsg) - sizeof(long), getpid(), 0);
+
+                        clock_t end = clock();
+
                         if(terminate || nextDay){
                             printf("\033[1;31m\033[1m[USER] Utente %d è rimasto in coda ...\033[0m\n", getpid());
-                            smStats->SERV_FAIL_S[service]++;
+                            statsDay->servizi_non_erogati[service-1]++;
+                            statsSim->servizi_non_erogati_tot[service-1]++;
                             nextDay = 0;
                         } else {
                             printf("\033[1;31m\033[1m[USER] %d ha finito, torna a casa.\033[0m\n", getpid());
-                            smStats->SERV_TOT_S[service]++;
-                            smStats->SERV_GIORNO_S[service]++;
+                            
+                            // tempo attesa giorno e totale x utenti
+                            float time_ms = ((float)(end - start)) * 1000.0 / CLOCKS_PER_SEC;
+                            statsDay->tempo_attesa_utenti += time_ms;
+                            statsSim->tempo_attesa_utenti_tot += time_ms;
+                            
+                            statsDay->servizi_erogati[service-1]++;
+                            statsSim->servizi_erogati_tot[service-1]++;
+                            statsDay->utenti_serviti++;
+                            statsSim->utenti_serviti_tot++;
                         }    
                     }
                 }
@@ -225,7 +246,6 @@ int main(int argc, char *argv[]) {
         else puts("\033[1;31m\033[1m[USER] Non vai alla posta\033[0m");
 
         sem_op(semUtente, 8, 0);
-        //Aggiorna statistiche
     }
 
     // -----------------------------------------------------------------------------

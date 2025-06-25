@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -Wvla -Wextra -Werror -I -D_GNU_SOURCE$(SRC_DIR)
 
 # Lista dei file sorgenti e degli eseguibili
-SOURCES = main.c direttore.c erogatoreTicket.c operatore.c utente.c
+SOURCES = direttore.c erogatoreTicket.c operatore.c utente.c
 EXECUTABLES = $(SOURCES:%.c=$(BIN_DIR)/%)
 
 # Regola principale
