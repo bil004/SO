@@ -45,7 +45,7 @@ void sem_op(int semid, int sem_num, int sem_op) {
     }
 }
 
-void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause) {
+void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim) {
     printf("\033[0;34m[WORKER] %d sta lavorando\033[0m\n", i);
     while (1) {
         if (terminate) break;
@@ -57,9 +57,15 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
 
         if (nofPause != 0 && (rand()%10) > 6) {
             printf("\033[1;34m\033[1m[WORKER] %d fa pausa!\033[0m\n", getpid());
+            
+            statsDay->pause_giornata++;
+            statsSim->pause_tot++;
+            
             nofPause--;
             break;
         }
+        
+        clock_t start_t = clock();
 
         // Worker esegue le sue operazioni
         WorkerMsg response;
@@ -93,7 +99,7 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         if (response.pid > 0)
             printf("\033[1;34m\033[1m[WORKER] Lavoratore %d svolge il lavoro di %d...\033[0m\n", i, response.pid);
 
-        int tmpLav = tempario[response.mtype];
+        int tmpLav = tempario[response.mtype-1];
         int tmpMin = tmpLav/2;
         srand(time(0)^getpid());
         int time = (rand()%tmpLav) + tmpMin;
@@ -103,7 +109,13 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
 
         WorkerMsg end = {response.pid, 0};
         msgsnd(msgid, &end, sizeof(WorkerMsg) - sizeof(long), 0);
+        
+        clock_t end_t = clock();
+
+        statsDay->tempo_erogazione_servizi[tipoLavoro-1] += ((float)(end_t - start_t)) * 1000.0 / CLOCKS_PER_SEC;
+        statsSim->tempo_erogazione_servizi_tot[tipoLavoro-1] += ((float)(end_t - start_t)) * 1000.0 / CLOCKS_PER_SEC;
     }
+    
     printf("\033[1;34m\033[1m[WORKER] Lavoratore %d ha finito di lavorare\033[0m\n", i);
 }
 
@@ -123,12 +135,26 @@ int main(int argc, char *argv[]) {
     int i = atoi(argv[3]);          // num lavoratore
     int msgId = atoi(argv[4]);      // id coda messaggi degli sportelli
     int tipoLavoro = atoi(argv[5]); // tipo di lavoro che sa svolgere l'operatore
+    int shm_id_StatsDay_str = atoi(argv[6]);
+    int shm_id_StatsSim_str = atoi(argv[7]);
 
     // Attacca la memoria condivisa
     Config *shared_memory = (Config *)shmat(shmId, NULL, 0);
     if (shared_memory == (Config *)-1) {
-        perror("[WORKER] Errore nell'attacco alla memoria condivisa");
+        perror("[WORKER] Errore nell'attacco alla memoria condivisa (Config)");
         exit(EXIT_FAILURE);
+    }
+
+    StatsDay *statsDay = (StatsDay* )shmat(shm_id_StatsDay_str, NULL, 0);
+    if (statsDay == (StatsDay *) -1) {
+        perror("[WORKER] Errore nell'attacco alla memoria condivisa (statsDay)");
+        exit(1);
+    }
+
+    StatsSim *statsSim = (StatsSim* )shmat(shm_id_StatsSim_str, NULL, 0);
+    if (statsSim == (StatsSim *) -1) {
+        perror("[WORKER] Errore nell'attacco alla memoria condivisa (StatsSim)");
+        exit(1);
     }
 
     int nofPause = shared_memory->NOF_PAUSE;
@@ -192,7 +218,10 @@ int main(int argc, char *argv[]) {
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
         // ricezione utente
-        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause);
+        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim);
+        
+        statsDay->operatori_attivi++;
+        statsSim->operatori_attivi_tot++;
 
         msgsnd(msgId, &message, sizeof(Sportello), 0);
 

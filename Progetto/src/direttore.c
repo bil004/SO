@@ -71,9 +71,9 @@ void setValues(StatsDay *statsDay) {
         statsDay->servizi_non_erogati[i] = 0;
         statsDay->tempo_erogazione_servizi[i] = 0;
     }
-    for (int i = 0; i < MAX_SPORTELLI; i++) {
+
+    for (int i = 0; i < MAX_SPORTELLI; i++) 
         statsDay->rapporto_op_sportelli[i] = 0;
-    }
 }
 
 void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_StatsSim, Config* shared_memory, StatsDay* statsDay, StatsSim* statsSim) {
@@ -196,15 +196,23 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     }
     printf("\033[1;32m[DIRECTOR] Inizializzazione LAVORATORI Terminata\033[0m\n");
 
+    statsSim->utenti_serviti_tot = 0;
+    statsSim->utenti_serviti_media_giorno = 0;
+    statsSim->tempo_attesa_utenti_tot = 0;
+    statsSim->operatori_attivi_tot = 0;
+    statsSim->pause_tot = 0;
+
     for (int i = 0; i < NUM_SERVIZI; i++) {
         statsSim->servizi_erogati_tot[i] = 0;
         statsSim->servizi_non_erogati_tot[i] = 0;
         statsSim->servizi_erogati_media_giorno[i] = 0;
         statsSim->servizi_non_erogati_media_giorno[i] = 0;
         statsSim->tempo_erogazione_servizi_tot[i] = 0;
-        statsSim->tempo_erogazione_servizi_media_giorno[i] = 0;
-        statsSim->rapporto_op_sportelli_media[i] = 0;
+        //statsSim->tempo_erogazione_servizi_media_giorno[i] = 0;
     }
+
+    for (int i = 0; i < MAX_SPORTELLI; i++) 
+        statsSim->rapporto_op_sportelli_media[i] = 0;
 
     puts("\nSESSIONE INIZIATA");
     
@@ -235,15 +243,15 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
         semctl(semWaitInit, 8, SETVAL, 0); //reimposta il semaforo fine giornata a 0 (giornata finita)
 
+        //Svuoto coda degli sportelli
+        int result;
+        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {}
+
         //cambio dei lavori sportelli
         shared_memory->DAYS_LEFT--;
         printf("\033[1;32m[DIRECTOR] Giorni rimanenti: %d\033[0m\n", shared_memory->DAYS_LEFT);
         
         puts("[DIRECTOR] Fine giornata.");
-
-        //Svuoto coda degli sportelli
-        int result;
-        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {}
 
         // Clear user-Erogatore message queue
         key_t msgkeyErog = ftok("/tmp", 'U');
@@ -288,23 +296,31 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
         nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
         
-        // Aggiorna statistiche giornaliere
+        // Stampa statistiche giornaliere
 
-        /*sem_wait(&semid);
-            printf("[Direttore] Statistiche al termine del giorno %d:\n", giorno + 1);
-            for (int i = 0; i < 6; i++) {
-                //Scrittura di tutte le statistiche aggiornatae
-            }
-            sem_signal(semid, 6);
-        */
-        // Alla fine della giornata, aggiorna statsSim e stampa statistiche
         // Esempio di aggiornamento e stampa (da completare con la logica reale):
         printf("\n--- STATISTICHE GIORNO %d ---\n", giorno+1);
         printf("Utenti serviti oggi: %d\n", statsDay->utenti_serviti);
         printf("Operatori attivi oggi: %d\n", statsDay->operatori_attivi);
-        for(int s=0; s<NUM_SERVIZI; s++) {
-            printf("Servizio %d: erogati %d, non erogati %d, tempo medio %.2f\n", s+1, statsDay->servizi_erogati[s], statsDay->servizi_non_erogati[s], statsDay->tempo_erogazione_servizi[s]);
+        printf("Tempo attesa utenti: %f\n", statsDay->tempo_attesa_utenti);
+        printf("Pause effettuate dagli operatori in giornata: %d\n", statsDay->pause_giornata);
+        
+        for(int s=0; s<NUM_SERVIZI; s++) { 
+            printf("Servizio %d: erogati %d, non erogati %d, tempo medio %f\n", s+1, statsDay->servizi_erogati[s], statsDay->servizi_non_erogati[s], statsDay->tempo_erogazione_servizi[s]);
+            
+            if (statsDay->servizi_erogati[s] > 0)
+                printf("Media tempo erogazione servizio %d: %.2f\n", s, statsDay->tempo_erogazione_servizi[s]/ statsDay->servizi_erogati[s]);    
+            else
+                printf("Media tempo erogazione servizio %d: %d\n", s, statsDay->servizi_erogati[s]);    
         }
+        
+        printf("Tot pause: %d\n", statsDay->pause_giornata);
+
+        if (statsDay->operatori_attivi > 0)
+            printf("Media pause: %0.3f", statsDay->pause_giornata/(float)statsDay->operatori_attivi);
+
+        puts("");
+        
         // ...altre statistiche giornaliere...
         printf("\n--- STATISTICHE SIMULAZIONE (aggiornate) ---\n");
         printf("Utenti serviti totali: %d\n", statsSim->utenti_serviti_tot);
@@ -315,7 +331,9 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         if (statsDay->utenti_serviti > 0)
             printf("Tempo di attesa media utenti: %f\n", statsDay->tempo_attesa_utenti/statsDay->utenti_serviti);
         
-        // ...altre statistiche cumulative...
+        puts("");
+        
+            // ...altre statistiche cumulative...
     }
 
 
@@ -346,7 +364,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     for (int i = 0; i < NUM_SERVIZI; i++) {
         printf("SERV_TOT_S: lavoro %d, %d\n", i, statsSim->servizi_erogati_tot[i]);
         printf("SERV_FAIL_S: lavoro %d, %d\n", i, statsSim->servizi_non_erogati_tot[i]);
-        printf("SERV_GIORNO_S: lavoro %d, %.2f\n", i, statsSim->servizi_erogati_media_giorno[i]);
+        printf("SERV_GIORNO_S: lavoro %d, %f\n", i, statsSim->servizi_erogati_media_giorno[i]);
     }
 
     puts("");

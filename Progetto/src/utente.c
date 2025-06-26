@@ -205,6 +205,7 @@ int main(int argc, char *argv[]) {
 
                     printf("\033[1;31m\033[1m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
                     msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
+
                     if(terminate || nextDay){
                         nextDay = 0;
                     }
