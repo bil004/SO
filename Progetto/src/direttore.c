@@ -72,8 +72,77 @@ void setValues(StatsDay *statsDay) {
         statsDay->tempo_erogazione_servizi[i] = 0;
     }
 
-    for (int i = 0; i < MAX_SPORTELLI; i++) 
-        statsDay->rapporto_op_sportelli[i] = 0;
+    /*for (int i = 0; i < MAX_SPORTELLI; i++) 
+        statsDay->rapporto_op_sportelli[i] = 0;*/
+}
+
+void printStatsDay(StatsDay *statsDay, int *count_operatori, int *count_sportelli, int gg) {
+    printf("\n--- STATISTICHE GIORNO %d ---\n", gg);
+    printf("Utenti serviti oggi: %d\n", statsDay->utenti_serviti);
+    printf("Operatori attivi oggi: %d\n", statsDay->operatori_attivi);
+    printf("Tempo attesa utenti: %f\n", statsDay->tempo_attesa_utenti);
+    printf("Pause effettuate dagli operatori in giornata: %d\n", statsDay->pause_giornata);
+    
+    for(int s=0; s<NUM_SERVIZI; s++) { 
+        printf("Servizio %d: erogati %d, non erogati %d, tempo medio %f\n", s+1, statsDay->servizi_erogati[s], statsDay->servizi_non_erogati[s], statsDay->tempo_erogazione_servizi[s]);
+        
+        if (statsDay->servizi_erogati[s] > 0)
+            printf("Media tempo erogazione servizio %d: %.2f\n", s, statsDay->tempo_erogazione_servizi[s]/ statsDay->servizi_erogati[s]);    
+        else
+            printf("Media tempo erogazione servizio %d: %d\n", s, statsDay->servizi_erogati[s]);    
+    }
+    
+    printf("Tot pause: %d\n", statsDay->pause_giornata);
+    
+    if (statsDay->utenti_serviti > 0)
+        printf("Tempo di attesa media utenti: %.4f\n", statsDay->tempo_attesa_utenti/statsDay->utenti_serviti);
+
+    if (statsDay->operatori_attivi > 0)
+        printf("Media pause: %0.3f", statsDay->pause_giornata/(float)statsDay->operatori_attivi);
+
+    if (statsDay->utenti_serviti > 0)
+        printf("Tempo di attesa media utenti: %.4f\n", statsDay->tempo_attesa_utenti/statsDay->utenti_serviti);
+    else
+        printf("Tempo di attesa media utenti: %.4f\n", 0.0f);
+
+    for (int i = 0; i < NUM_SERVIZI; i++) {
+        int index = i+1;
+        if (count_sportelli[i] > 0)
+            printf("Rapporto operatori/sportelli %d: %.4f\n", index, (float)count_operatori[i] / count_sportelli[i]);
+        else
+            printf("Rapporto operatori/sportelli %d: %.4f\n", index, 0.0f);
+    }
+}
+
+void printStatsSim(StatsSim *statsSim, Config *shared_memory, int *count_operatori, int *count_sportelli, int gg) {
+    if (gg == shared_memory->DAYS_LEFT) {
+        puts("\n--- STATISTICHE SIMULAZIONE ---\n");
+        printf("Utenti serviti totali: %d\n", statsSim->utenti_serviti_tot);
+        printf("Operatori attivi totali: %d\n", statsSim->operatori_attivi_tot);
+        printf("Tempo attesa utenti: %.4f\n", statsSim->tempo_attesa_utenti_tot);
+        printf("Utenti serviti: %d\n", statsSim->utenti_serviti_tot);
+        printf("Operatori al giorno: %.2f\n", statsSim->operatori_attivi_tot/(float)shared_memory->SIM_DURATION);
+        printf("Pause totali operatori: %d\n", statsSim->pause_tot);
+        
+        puts("\n\n--- STATISTICHE IN BASE AL TIPO DI SERVIZIO ---\n");
+
+        for (int i = 0; i < NUM_SERVIZI; i++) {
+            int index = i+1;
+            printf("SERV_TOT_S: lavoro %d, %d\n", index, statsSim->servizi_erogati_tot[i]);
+            printf("SERV_FAIL_S: lavoro %d, %d\n", index, statsSim->servizi_non_erogati_tot[i]);
+            printf("SERV_GIORNO_S (SUCCESS): lavoro %d, %.2f\n", index, statsSim->servizi_erogati_tot[i]/(float)shared_memory->SIM_DURATION);
+            printf("SERV_GIORNO_S (FAILED): lavoro %d, %.2f\n", index, statsSim->servizi_non_erogati_tot[i]/(float)shared_memory->SIM_DURATION);
+            puts("");
+        }
+    } else {
+        
+        printf("\n--- STATISTICHE SIMULAZIONE (aggiornate) ---\n");
+        printf("Utenti serviti totali: %d\n", statsSim->utenti_serviti_tot);
+        printf("Operatori attivi totali: %d\n", statsSim->operatori_attivi_tot);
+        printf("Tempo attesa utenti: %.4f\n", statsSim->tempo_attesa_utenti_tot);
+        printf("Utenti serviti: %d\n", statsSim->utenti_serviti_tot);
+        
+    }
 }
 
 void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_StatsSim, Config* shared_memory, StatsDay* statsDay, StatsSim* statsSim) {
@@ -197,7 +266,6 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     printf("\033[1;32m[DIRECTOR] Inizializzazione LAVORATORI Terminata\033[0m\n");
 
     statsSim->utenti_serviti_tot = 0;
-    statsSim->utenti_serviti_media_giorno = 0;
     statsSim->tempo_attesa_utenti_tot = 0;
     statsSim->operatori_attivi_tot = 0;
     statsSim->pause_tot = 0;
@@ -205,7 +273,6 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     for (int i = 0; i < NUM_SERVIZI; i++) {
         statsSim->servizi_erogati_tot[i] = 0;
         statsSim->servizi_non_erogati_tot[i] = 0;
-        statsSim->servizi_erogati_media_giorno[i] = 0;
         statsSim->servizi_non_erogati_media_giorno[i] = 0;
         statsSim->tempo_erogazione_servizi_tot[i] = 0;
         //statsSim->tempo_erogazione_servizi_media_giorno[i] = 0;
@@ -214,8 +281,12 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     for (int i = 0; i < MAX_SPORTELLI; i++) 
         statsSim->rapporto_op_sportelli_media[i] = 0;
 
-    puts("\nSESSIONE INIZIATA");
+
+    int count_sportelli[NUM_SERVIZI] = {0};
+    int count_operatori[NUM_SERVIZI] = {0};
     
+    puts("\nSESSIONE INIZIATA");
+
     // creare un semaforo mutex giornata attiva
     for (int giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
         // resetta i valori giornalieri di smStats
@@ -227,15 +298,13 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         semctl(semWaitInit, 8, SETVAL, 1+ shared_memory->NOF_WORKERS + shared_memory->NOF_USERS); //reimposta il semaforo fine giornata a 1 (giornata non finita)
 
         // reimposta i semafori
-        for(int i=0; i<shared_memory->NOF_USERS; i++){
+        for(int i=0; i<shared_memory->NOF_USERS; i++)
             sem_op(semWaitInit, 7, 1);
-        }
     
         sem_op(semWaitInit, 4, 1);
     
-        for(int i=0; i<shared_memory->NOF_WORKERS; i++){
+        for(int i=0; i<shared_memory->NOF_WORKERS; i++)
             sem_op(semWaitInit, 6, 1);
-        }
 
         nanosleep((const struct timespec[]){{0, 60 * 8 * shared_memory->N_NANO_SECS}}, NULL);
 
@@ -297,43 +366,21 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
         
         // Stampa statistiche giornaliere
-
-        // Esempio di aggiornamento e stampa (da completare con la logica reale):
-        printf("\n--- STATISTICHE GIORNO %d ---\n", giorno+1);
-        printf("Utenti serviti oggi: %d\n", statsDay->utenti_serviti);
-        printf("Operatori attivi oggi: %d\n", statsDay->operatori_attivi);
-        printf("Tempo attesa utenti: %f\n", statsDay->tempo_attesa_utenti);
-        printf("Pause effettuate dagli operatori in giornata: %d\n", statsDay->pause_giornata);
+        for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++)
+            count_sportelli[shared_memory->sportelli[i] - 1]++;
         
-        for(int s=0; s<NUM_SERVIZI; s++) { 
-            printf("Servizio %d: erogati %d, non erogati %d, tempo medio %f\n", s+1, statsDay->servizi_erogati[s], statsDay->servizi_non_erogati[s], statsDay->tempo_erogazione_servizi[s]);
-            
-            if (statsDay->servizi_erogati[s] > 0)
-                printf("Media tempo erogazione servizio %d: %.2f\n", s, statsDay->tempo_erogazione_servizi[s]/ statsDay->servizi_erogati[s]);    
-            else
-                printf("Media tempo erogazione servizio %d: %d\n", s, statsDay->servizi_erogati[s]);    
-        }
+        for (int i = 0; i < shared_memory->NOF_WORKERS; i++)
+            count_operatori[shared_memory->lavoratori[i] - 1]++;
         
-        printf("Tot pause: %d\n", statsDay->pause_giornata);
-
-        if (statsDay->operatori_attivi > 0)
-            printf("Media pause: %0.3f", statsDay->pause_giornata/(float)statsDay->operatori_attivi);
-
+        int gg = giorno+1;
+        printStatsDay(statsDay, count_sportelli, count_operatori, gg);
         puts("");
         
+        printStatsSim(statsSim, shared_memory, count_sportelli, count_operatori, gg);
         // ...altre statistiche giornaliere...
-        printf("\n--- STATISTICHE SIMULAZIONE (aggiornate) ---\n");
-        printf("Utenti serviti totali: %d\n", statsSim->utenti_serviti_tot);
-        printf("Operatori attivi totali: %d\n", statsSim->operatori_attivi_tot);
-        printf("Tempo attesa utenti: %f\n", statsDay->tempo_attesa_utenti);
-        printf("Utenti serviti: %d\n", statsDay->utenti_serviti);
-        
-        if (statsDay->utenti_serviti > 0)
-            printf("Tempo di attesa media utenti: %f\n", statsDay->tempo_attesa_utenti/statsDay->utenti_serviti);
-        
+
         puts("");
         
-            // ...altre statistiche cumulative...
     }
 
 
@@ -359,18 +406,13 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         exit(EXIT_FAILURE);
     }
 
+    puts("");
+    printStatsDay(statsDay, count_sportelli, count_operatori, shared_memory->SIM_DURATION);
     puts("\n");
-
-    for (int i = 0; i < NUM_SERVIZI; i++) {
-        printf("SERV_TOT_S: lavoro %d, %d\n", i, statsSim->servizi_erogati_tot[i]);
-        printf("SERV_FAIL_S: lavoro %d, %d\n", i, statsSim->servizi_non_erogati_tot[i]);
-        printf("SERV_GIORNO_S: lavoro %d, %f\n", i, statsSim->servizi_erogati_media_giorno[i]);
-    }
+    printStatsSim(statsSim, shared_memory, count_operatori, count_sportelli, shared_memory->DAYS_LEFT);
 
     puts("");
     printf("\033[1;32m[DIRECTOR] direttore finito\033[0m\n");
-
-
 }
 
 void load_config(const char *filename, Config *config) {
@@ -465,13 +507,7 @@ int main(int argc, char *argv[]) {
 
     signal(SIGUSR1, signal_handler);
 
-    // Avvia la simulazione direttore
-    // char semWaitInit_str[16], shm_id_str[16], shm_id_Stats_str[16];
-    // snprintf(semWaitInit_str, sizeof(semWaitInit_str), "%d", semWaitInit);
-    // snprintf(shm_id_str, sizeof(shm_id_str), "%d", shm_id);
-    // snprintf(shm_id_Stats_str, sizeof(shm_id_Stats_str), "%d", shm_id_Stats);
-    // direttore(semWaitInit_str, shm_id_str, shm_id_Stats_str, shared_memory, smStats);
-
+    // Avvia simulazione
     direttore(semWaitInit, shm_id, shm_id_StatsDay, shm_id_StatsSim, shared_memory, statsDay, statsSim);
 
     // Detach e cleanup

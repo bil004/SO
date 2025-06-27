@@ -51,29 +51,24 @@ typedef struct Config {
 } Config;
 
 typedef struct StatsDay {
-    int utenti_serviti; // utenti serviti nella giornata  DONE
-    int servizi_erogati[NUM_SERVIZI]; // per tipo servizio  DONE
-    int servizi_non_erogati[NUM_SERVIZI];  // DONE
-    float tempo_attesa_utenti; // somma tempi attesa utenti nella giornata  DONE
-    float tempo_erogazione_servizi[NUM_SERVIZI]; // per tipo servizio  DONE (MEDIA DA FARE)
-    int operatori_attivi; // operatori attivi nella giornata DONE
-    int pause_giornata; // pause effettuate nella giornata DONE (MEDIA DA FARE)
-    float rapporto_op_sportelli[MAX_SPORTELLI]; // rapporto per ogni sportello DONER KEBAB
+    int utenti_serviti; 
+    int servizi_erogati[NUM_SERVIZI];
+    int servizi_non_erogati[NUM_SERVIZI];  
+    float tempo_attesa_utenti; 
+    float tempo_erogazione_servizi[NUM_SERVIZI]; 
+    int operatori_attivi; 
+    int pause_giornata; 
 } StatsDay;
 
 typedef struct StatsSim {
-    int utenti_serviti_tot; // utenti serviti totali DONE
-    float utenti_serviti_media_giorno; // media utenti serviti al giorno  
-    int servizi_erogati_tot[NUM_SERVIZI];  // DONE
-    int servizi_non_erogati_tot[NUM_SERVIZI];  // DONE
-    float servizi_erogati_media_giorno[NUM_SERVIZI];
+    int utenti_serviti_tot;  
+    int servizi_erogati_tot[NUM_SERVIZI];  
+    int servizi_non_erogati_tot[NUM_SERVIZI];  
     float servizi_non_erogati_media_giorno[NUM_SERVIZI];
-    float tempo_attesa_utenti_tot; // somma tempi attesa utenti in sim DONE
-    float tempo_erogazione_servizi_tot[NUM_SERVIZI];  // DONE
-    // float tempo_erogazione_servizi_media_giorno[NUM_SERVIZI];
-    int operatori_attivi_tot; // DONE
-    float operatori_attivi_media_giorno;
-    float pause_tot; // DONE
+    float tempo_attesa_utenti_tot; 
+    float tempo_erogazione_servizi_tot[NUM_SERVIZI];  
+    int operatori_attivi_tot; 
+    int pause_tot; 
     float rapporto_op_sportelli_media[MAX_SPORTELLI];
 } StatsSim;
 

@@ -131,9 +131,14 @@
     - Sistemato le varie statistiche gg 
     - JEWIGGER
 
+27/06
+    - Finite le statistiche
+    - Corretta la parte in cui non stampava le statistiche per l'ultimo gg
+    - Messo i commenti stile Doxygen in functions.h
+
+
 TO DO-->
     - Produrre 2 file (config_timout.conf e config_explode.conf) in grado di generare la terminazione dei file in caso di fine gg e di caso di EXPLODE_THRESHOLD
-    - Risolvere il problema dei processi Worker che non finiscono la giornata (quando si svuota la coda)
-    - Fare la parte dell'aggiornamento delle statistiche (statsSim)
+    - Fare la relazione del progetto
     - Gestire tutta la parte che riguarda la terminazione in caso di fallimento (see point 1)
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
