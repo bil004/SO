@@ -1,6 +1,8 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+#include <stdbool.h>
+
 /**
  * @brief Inizializza i valori della struttura StatsDay.
  * @param day Puntatore alla struttura StatsDay da inizializzare.
@@ -44,8 +46,9 @@ void errExit(char* s);
  * @param shared_memory Puntatore a Config condivisa.
  * @param statsDay Puntatore a StatsDay condivisa.
  * @param statsSim Puntatore a StatsSim condivisa.
+ * @param explode Puntatore a ESPLOSIONE!!! 🧨🧨🧨🧨🧨🧨
  */
-void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_StatsSim, Config* shared_memory, StatsDay* statsDay, StatsSim* statsSim);
+void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_StatsSim, Config* shared_memory, StatsDay* statsDay, StatsSim* statsSim, bool *explode);
 
 /**
  * @brief Carica la configurazione dal file e popola la struttura Config.
@@ -65,7 +68,7 @@ void load_config(const char *filename, Config *config);
  * @param statsDay Puntatore a StatsDay condivisa.
  * @param statsSim Puntatore a StatsSim condivisa.
  */
-void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim);
+void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause);
 
 /**
  * @brief Esegue un'operazione su un semaforo (P/V). (Duplicato, da rimuovere se non necessario)

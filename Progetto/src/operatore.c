@@ -45,7 +45,7 @@ void sem_op(int semid, int sem_num, int sem_op) {
     }
 }
 
-void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim) {
+void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause) {
     printf("\033[0;34m[WORKER] %d sta lavorando\033[0m\n", i);
     while (1) {
         if (terminate) break;
@@ -55,7 +55,7 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         }
         srand(time(0)^getpid());
 
-        if (nofPause != 0 && (rand()%10) > 6) {
+        if (nofPause != 0 && (rand()%10) < pPause) {
             printf("\033[1;34m\033[1m[WORKER] %d fa pausa!\033[0m\n", getpid());
             
             statsDay->pause_giornata++;
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
         // ricezione utente
-        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim);
+        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim, shared_memory->P_PAUSE);
         
         statsDay->operatori_attivi++;
         statsSim->operatori_attivi_tot++;

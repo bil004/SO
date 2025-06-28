@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -145,7 +146,7 @@ void printStatsSim(StatsSim *statsSim, Config *shared_memory, int *count_operato
     }
 }
 
-void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_StatsSim, Config* shared_memory, StatsDay* statsDay, StatsSim* statsSim) {
+void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_StatsSim, Config* shared_memory, StatsDay* statsDay, StatsSim* statsSim, bool *explode) {
     pid_t* pid_array = malloc(sizeof(pid_t) * (shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1));
     int j = 0;
 
@@ -287,8 +288,9 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     
     puts("\nSESSIONE INIZIATA");
 
+    int giorno;
     // creare un semaforo mutex giornata attiva
-    for (int giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
+    for (giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
         // resetta i valori giornalieri di smStats
         setValues(statsDay);
 
@@ -349,7 +351,15 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
             msg_enqueue(shared_memory, msgId, &message);
         }
 
-        if(shared_memory->DAYS_LEFT == 0){
+        // Fai esplodere la sim se user falliti > explode_threshold
+        int notService = 0;
+        for (int i = 0; i < NUM_SERVIZI; i++)
+            notService += statsDay->servizi_non_erogati[i];
+
+        if (notService > shared_memory->EXPLODE_THRESHOLD) 
+            *explode = true;
+
+        if(*explode || shared_memory->DAYS_LEFT == 0) {
             puts("\n[DIRECTOR] Giorni finiti, chiudo tutto");
             // signal ia figli per interrompere attesa su nuovo giorno
             for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
@@ -380,7 +390,6 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         // ...altre statistiche giornaliere...
 
         puts("");
-        
     }
 
 
@@ -407,7 +416,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     }
 
     puts("");
-    printStatsDay(statsDay, count_sportelli, count_operatori, shared_memory->SIM_DURATION);
+    printStatsDay(statsDay, count_sportelli, count_operatori, giorno+1);
     puts("\n");
     printStatsSim(statsSim, shared_memory, count_operatori, count_sportelli, shared_memory->DAYS_LEFT);
 
@@ -439,7 +448,11 @@ void load_config(const char *filename, Config *config) {
                 config->N_NANO_SECS = value;
             } else if (strcmp(key, "NOF_PAUSE") == 0) {
                 config->NOF_PAUSE = value;
-            }
+            } else if (strcmp(key, "EXPLODE_THRESHOLD") == 0) {
+                config->EXPLODE_THRESHOLD = value;
+            } else if (strcmp(key, "P_PAUSE") == 0) {
+                config->P_PAUSE = value;
+            } 
         }
     }
 
@@ -507,8 +520,9 @@ int main(int argc, char *argv[]) {
 
     signal(SIGUSR1, signal_handler);
 
+    bool explode = false;
     // Avvia simulazione
-    direttore(semWaitInit, shm_id, shm_id_StatsDay, shm_id_StatsSim, shared_memory, statsDay, statsSim);
+    direttore(semWaitInit, shm_id, shm_id_StatsDay, shm_id_StatsSim, shared_memory, statsDay, statsSim, &explode);
 
     // Detach e cleanup
     if (shmdt(shared_memory) == -1) {
@@ -541,5 +555,13 @@ int main(int argc, char *argv[]) {
     }
     puts("");
     printf("\033[1;32m\033[1mSIMULAZIONE TERMINATA!\033[0m\n");
-    return 0;
+
+    // Controllare se viene raggiunto l'explode TrashHold
+    if (!explode) 
+        puts("Simulazione terminata correttamente!(TIMEOUT)");
+    else
+        puts("Simulazione terminata prematuramente (EXPLODE)");
+        
+
+    exit(0);
 }
