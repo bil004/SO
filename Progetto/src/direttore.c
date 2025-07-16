@@ -186,6 +186,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         exit(1);
     }
     struct msgbuf message;
+    struct msqid_ds buf;
     msg_enqueue(shared_memory, msgId, &message);
     
 
@@ -316,9 +317,10 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
         //Svuoto coda degli sportelli
         int result;
-        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {}
+        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {
+            printf("SPORTELLO TIPO %d RIMOSSO\n", message.mtext.tipoLavoro);
+        }
 
-        //cambio dei lavori sportelli
         shared_memory->DAYS_LEFT--;
         printf("\033[1;32m[DIRECTOR] Giorni rimanenti: %d\033[0m\n", shared_memory->DAYS_LEFT);
         

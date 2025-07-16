@@ -136,13 +136,16 @@
     - Corretta la parte in cui non stampava le statistiche per l'ultimo gg
     - Messo i commenti stile Doxygen in functions.h
 
+16/07
+    -aggiustato errore dove il programma non terminava (un'operatore non faceva terminate)
+    -aggiustata la coda di messaggi sportelli (venivano reinseriti dagli operatori)
 
 TO DO-->
     - Produrre 2 file (config_timout.conf e config_explode.conf) in grado di generare la terminazione dei file in caso di fine gg e di caso di EXPLODE_THRESHOLD
         - Gestire tutta la parte che riguarda la terminazione in caso di fallimento (see point 1)
+    - Aggiungere mutua esclusione durante scrittura in shared memory
     - Correggere il file functions.h (mancano alcuni commenti per alcuni parametri)
     - Fare la relazione del progetto
-    - Correggere per bene la parte di terminazione (Dice che ci sono tot utenti serviti anche se non vanno in posta)
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
 
 PLUS -->

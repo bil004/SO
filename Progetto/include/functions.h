@@ -68,7 +68,7 @@ void load_config(const char *filename, Config *config);
  * @param statsDay Puntatore a StatsDay condivisa.
  * @param statsSim Puntatore a StatsSim condivisa.
  */
-void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause);
+void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause, Config *sharedMemory);
 
 /**
  * @brief Esegue un'operazione su un semaforo (P/V). (Duplicato, da rimuovere se non necessario)

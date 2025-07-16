@@ -45,12 +45,13 @@ void sem_op(int semid, int sem_num, int sem_op) {
     }
 }
 
-void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause) {
+void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause, Config *sharedMemory) {
     printf("\033[0;34m[WORKER] %d sta lavorando\033[0m\n", i);
     while (1) {
         if (terminate) break;
         int fineGG = semctl(semLavoratore, 8, GETVAL);
         if (fineGG == 0) {
+            printf("[WORKER] check fineGG lavoratore %d\n", i);
             break;
         }
         srand(time(0)^getpid());
@@ -73,24 +74,25 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         if (ret == -1) {
             if (errno == EINTR) {
                 if (terminate) {
-                    printf("\033[1;34m\033[1m[WORKER] msgrcv interrotto da segnale, termino.\033[0m\n");
-                    nextDay = 0;
+                    printf("\033[1;34m\033[1m[WORKER] msgrcv interrotto da segnale terminate, termino.\033[0m\n");
+                    //nextDay = 0;
                     break;
                 }
                 if (nextDay) {
-                    nextDay = 0;
+                    printf("\033[1;34m\033[1m[WORKER] msgrcv interrotto da segnale nextDay, termino.\033[0m\n");
+                    //nextDay = 0;
                     break;
                 }
             }
             if (errno == ENOMSG) {
                 // Nessun lavoro disponibile
                 printf("\033[1;34m\033[1m[WORKER] Lavoratore %d non ha trovato un lavoro... \033[0m\n", i); 
-                nextDay = 0;
+                //nextDay = 0;
                 continue;
             }
             // altri errori
             perror("[WORKER] msgrcv error");
-            nextDay = 0;
+            //nextDay = 0;
             exit(1);
         }
 
@@ -115,7 +117,9 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
         statsDay->tempo_erogazione_servizi[tipoLavoro-1] += ((float)(end_t - start_t)) * 1000.0 / CLOCKS_PER_SEC;
         statsSim->tempo_erogazione_servizi_tot[tipoLavoro-1] += ((float)(end_t - start_t)) * 1000.0 / CLOCKS_PER_SEC;
     }
-    
+    if(sharedMemory->DAYS_LEFT < 1) {
+        terminate = 1;
+    }
     printf("\033[1;34m\033[1m[WORKER] Lavoratore %d ha finito di lavorare\033[0m\n", i);
 }
 
@@ -191,6 +195,8 @@ int main(int argc, char *argv[]) {
         struct msgbuf message;
         int ret = msgrcv(msgId, &message, sizeof(Sportello), tipoLavoro, 0);
 
+        printf("[DEBUG][WORKER] PID: %d, msgrcv return: %d, mtype ricevuto: %ld\n", getpid(), ret, message.mtype);
+
         if (ret == -1) {
             if (errno == ENOMSG) {
                 // Nessuno sportello disponibile per questo operatore oggi
@@ -218,16 +224,24 @@ int main(int argc, char *argv[]) {
         int msgidW = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
         // ricezione utente
-        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim, shared_memory->P_PAUSE);
-        
+        cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim, shared_memory->P_PAUSE, shared_memory);
         statsDay->operatori_attivi++;
         statsSim->operatori_attivi_tot++;
 
-        msgsnd(msgId, &message, sizeof(Sportello), 0);
-
+        if(nextDay == 0){
+            msgsnd(msgId, &message, sizeof(Sportello), 0);
+        }
+        else{
+            nextDay = 0;
+        }
         // Attende la fine della giornata prima di ripartire
         sem_op(semLavoratore, 8, 0);
         // Aggiorna statistiche
+
+        if(terminate){
+            printf("\033[0;34m[WORKER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());
+            break;
+        }
     }
 
     // Detach shared memory
