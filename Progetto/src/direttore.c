@@ -341,7 +341,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         while ((result = msgrcv(msgidOp, &wsmg, sizeof(WorkerMsg) - sizeof(long), 0, IPC_NOWAIT)) != -1) {}
 
         //Operatore esce da msgRcv per sportelli
-        if(shared_memory->DAYS_LEFT!=0) {
+        if(shared_memory->DAYS_LEFT != 0) {
             for (int i = 0; i < shared_memory->NOF_WORKERS + shared_memory->NOF_USERS; i++) {
                 if (kill(opUsrPid[i], 0) == 0) {
                     if (kill(opUsrPid[i], SIGUSR2) == -1) {
@@ -353,6 +353,8 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
             msg_enqueue(shared_memory, msgId, &message);
         }
 
+        nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
+        
         // Fai esplodere la sim se user falliti > explode_threshold
         int notService = 0;
         for (int i = 0; i < NUM_SERVIZI; i++)
@@ -375,8 +377,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
             break;
         }
 
-        nanosleep((const struct timespec[]){{0, 60 * 16 * shared_memory->N_NANO_SECS}}, NULL);
-        
+
         // Stampa statistiche giornaliere
         for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++)
             count_sportelli[shared_memory->sportelli[i] - 1]++;

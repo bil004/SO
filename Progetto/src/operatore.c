@@ -225,15 +225,14 @@ int main(int argc, char *argv[]) {
 
         // ricezione utente
         cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim, shared_memory->P_PAUSE, shared_memory);
-        statsDay->operatori_attivi++;
-        statsSim->operatori_attivi_tot++;
 
         if(nextDay == 0){
             msgsnd(msgId, &message, sizeof(Sportello), 0);
+            statsDay->operatori_attivi++;
+            statsSim->operatori_attivi_tot++;
         }
-        else{
-            nextDay = 0;
-        }
+        else nextDay = 0;
+        
         // Attende la fine della giornata prima di ripartire
         sem_op(semLavoratore, 8, 0);
         // Aggiorna statistiche
