@@ -175,11 +175,12 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *co
         fprintf(csv, "Utenti serviti totali;");
         fprintf(csv, "Tot Servizio 1 erogati;Tot Servizio 2 erogati;Tot Servizio 3 erogati;Tot Servizio 4 erogati;Tot Servizio 5 erogati;Tot Servizio 6 erogati;");
         fprintf(csv, "Tot Servizio 1 non erogati;Tot Servizio 2 non erogati;Tot Servizio 3 non erogati;Tot Servizio 4 non erogati;Tot Servizio 5 non erogati;Tot Servizio 6 non erogati;");
+        fprintf(csv, "Servizio 1 erogato in media al giorno;Servizio 2 erogato in media al giorno;Servizio 3 erogato in media al giorno;Servizio 4 erogato in media al giorno;Servizio 5 erogato in media al giorno;Servizio 6 erogato in media al giorno;");
         fprintf(csv, "Servizio 1 non erogato in media al giorno;Servizio 2 non erogato in media al giorno;Servizio 3 non erogato in media al giorno;Servizio 4 non erogato in media al giorno;Servizio 5 non erogato in media al giorno;Servizio 6 non erogato in media al giorno;");
         fprintf(csv, "Tempo medio attesa utenti Tot(min);");
-        fprintf(csv, "Tempo erogazione servizio 1;Tempo erogazione servizio 2;Tempo erogazione servizio 3;Tempo erogazione servizio 4;Tempo erogazione servizio 5;Tempo erogazione servizio 6;");
-        fprintf(csv, "Media tempo erogazione servizio 1;Media tempo erogazione servizio 2;Media tempo erogazione servizio 3;Media tempo erogazione servizio 4;Media tempo erogazione servizio 5;Media tempo erogazione servizio 6;");
-        fprintf(csv, "Media tempo servizio 1 non erogato;Media tempo servizio 2 non erogato;Media tempo servizio 3 non erogato;Media tempo servizio 4 non erogato;Media tempo servizio 5 non erogato;Media tempo servizio 6 non erogato;");
+        //fprintf(csv, "Tempo erogazione servizio 1;Tempo erogazione servizio 2;Tempo erogazione servizio 3;Tempo erogazione servizio 4;Tempo erogazione servizio 5;Tempo erogazione servizio 6;");
+        //fprintf(csv, "Media tempo erogazione servizio 1;Media tempo erogazione servizio 2;Media tempo erogazione servizio 3;Media tempo erogazione servizio 4;Media tempo erogazione servizio 5;Media tempo erogazione servizio 6;");
+        //fprintf(csv, "Media tempo servizio 1 non erogato;Media tempo servizio 2 non erogato;Media tempo servizio 3 non erogato;Media tempo servizio 4 non erogato;Media tempo servizio 5 non erogato;Media tempo servizio 6 non erogato;");
         fprintf(csv, "Operatori Totali attivi;Pause Totali effettuate al gg;Operatori al gg\n");
         //fprintf(csv, "Rapporto Operatori/Sportelli(1);Rapporto Operatori/Sportelli(2);Rapporto Operatori/Sportelli(3);Rapporto Operatori/Sportelli(4);Rapporto Operatori/Sportelli(5);Rapporto Operatori/Sportelli(6)\n");
 
@@ -191,13 +192,17 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *co
         for (int i = 0; i < NUM_SERVIZI; i++) 
             fprintf(csv, "%d;", statsSim->servizi_non_erogati_tot[i]);
         
-        fprintf(csv, "%.2f;", statsSim->tempo_attesa_utenti_tot);
-
         for (int i = 0; i < NUM_SERVIZI; i++) 
             fprintf(csv, "%.2f;", statsSim->servizi_erogati_tot[i]/(float)shared_memory->SIM_DURATION);
-        
+
         for (int i = 0; i < NUM_SERVIZI; i++) 
             fprintf(csv, "%.2f;", statsSim->servizi_non_erogati_tot[i]/(float)shared_memory->SIM_DURATION);
+
+
+        
+        fprintf(csv, "%.2f;", statsSim->tempo_attesa_utenti_tot);
+
+        
         
         fprintf(csv, "%d;", statsSim->operatori_attivi_tot);
         fprintf(csv, "%d;", statsSim->pause_tot);
