@@ -144,6 +144,11 @@
     - sistemato bug sulle configurazioni di explode (conflitto tra nextDay e terminate)
     - controllato le statistiche (messo nell'if(nextDay == 0) operatori_attivi++ e non)
 
+20/07
+    - Quasi terminato la stampa sul file csv (manca la parte di statsSim che è sballata)
+    - corretto alcune ridondanze (stampavamo più volte utenti tot in printStatsSim)
+    - SYBAU LUCA
+
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
     - Correggere il file functions.h (mancano alcuni commenti per alcuni parametri)

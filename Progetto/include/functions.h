@@ -85,7 +85,7 @@ void sem_op(int semid, int sem_num, int sem_op);
  * @param count_sportelli Array con il conteggio degli sportelli per servizio.
  * @param gg giorno 
  */
-void printStatsDay(StatsDay *statsDay, int *count_operatori, int *count_sportelli, int gg);
+void printStatsDay(StatsDay *statsDay, FILE *csv, int *count_operatori, int *count_sportelli, int gg);
 
 /**
  * @brief Stampa le statistiche della simulazione.
@@ -95,6 +95,6 @@ void printStatsDay(StatsDay *statsDay, int *count_operatori, int *count_sportell
  * @param count_sportelli Array con il conteggio degli sportelli per servizio.
  * @param gg giorno
  */
-void printStatsSim(StatsSim *statsSim, Config *shared_memory, int *count_operatori, int *count_sportelli, int gg);
+void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *count_operatori, int *count_sportelli, int gg);
 
 #endif
