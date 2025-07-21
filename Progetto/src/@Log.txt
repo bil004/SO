@@ -149,11 +149,20 @@
     - corretto alcune ridondanze (stampavamo più volte utenti tot in printStatsSim)
     - SYBAU LUCA
 
+21/07
+    - aggiustato la stampa e la scrittura delle statistiche nel file .csv (ma mancano altri campi)
+
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
-    - Correggere il file functions.h (mancano alcuni commenti per alcuni parametri)
     - Fare la relazione del progetto
+    - fare:
+        - utenti_serviti_media_gg
+        - media_tempo_erogazione_serv(aggiungere print)
+        - operatori_attivi_totali?!
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
 
 PLUS -->
     - Fare la parte del progetto da 30 (statistiche in csv e altre cose)
+        - statistiche fatte ✅ (seh ti piacerebbe)
+        - utenti con un array di richieste
+        - NEW_USERS: aggiungi utenti durante la sim oppure prima?
