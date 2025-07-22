@@ -39,7 +39,6 @@ typedef struct Config {
     int NOF_USERS;
     int SIM_DURATION;
     int DAYS_LEFT;
-    int DAY;
     int N_NANO_SECS;
     int SERVICE;
     int TIME_SERVICE;

@@ -47,6 +47,10 @@ void sem_op(int semid, int sem_num, int sem_op) {
 
 void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nanoSec, int nofPause, StatsDay *statsDay, StatsSim *statsSim, int pPause, Config *sharedMemory) {
     printf("\033[0;34m[WORKER] %d sta lavorando\033[0m\n", i);
+    
+    statsDay->operatori_attivi++;
+    statsSim->operatori_attivi_tot++;
+    
     while (1) {
         if (terminate) break;
         int fineGG = semctl(semLavoratore, 8, GETVAL);
@@ -226,16 +230,13 @@ int main(int argc, char *argv[]) {
         // ricezione utente
         cicloOperativo(semLavoratore, i, tipoLavoro, msgidW, shared_memory->N_NANO_SECS, nofPause, statsDay, statsSim, shared_memory->P_PAUSE, shared_memory);
 
-        if(nextDay == 0){
+        if(nextDay == 0)
             msgsnd(msgId, &message, sizeof(Sportello), 0);
-            statsDay->operatori_attivi++;
-            statsSim->operatori_attivi_tot++;
-        }
-        else nextDay = 0;
+        else 
+            nextDay = 0;
         
         // Attende la fine della giornata prima di ripartire
         sem_op(semLavoratore, 8, 0);
-        // Aggiorna statistiche
 
         if(terminate){
             printf("\033[0;34m[WORKER] Processo %d: Terminazione richiesta.\033[0m\n", getpid());

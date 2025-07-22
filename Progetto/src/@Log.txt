@@ -156,8 +156,7 @@ TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
     - Fare la relazione del progetto
     - fare:
-        - utenti_serviti_media_gg
-        - media_tempo_erogazione_serv(aggiungere print)
+        
         - operatori_attivi_totali?!
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
 
