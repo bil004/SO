@@ -152,12 +152,15 @@
 21/07
     - aggiustato la stampa e la scrittura delle statistiche nel file .csv (ma mancano altri campi)
 
+22/07
+    - aggiustato statistiche mancanti e rotte
+    - Da correggere stat rapporto operatori/sportelli, tot_sportelli rotta in culo come la madonna
+
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
     - Fare la relazione del progetto
     - fare:
-        
-        - operatori_attivi_totali?!
+        - stat rapporto operatori/sportelli
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
 
 PLUS -->

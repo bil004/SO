@@ -517,15 +517,20 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
         // Stampa statistiche giornaliere
         for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
-            count_sportelli[shared_memory->sportelli[i] - 1]++;
-            tot_sportelli[shared_memory->sportelli[i] - 1]++;
+        count_sportelli[shared_memory->sportelli[i] - 1]++;
+        tot_sportelli[shared_memory->sportelli[i] - 1]++;
+        }
+        for (int i = 0; i < shared_memory->NOF_WORKERS; i++){
             count_operatori[shared_memory->lavoratori[i] - 1]++;
             tot_operatori[shared_memory->lavoratori[i] - 1]++;
         }
         
-        for(int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
-            printf("tot_sportelli: %d\n", tot_sportelli[i]);
-            printf("tot_operatori: %d\n", tot_operatori[i]);
+        for(int i = 0; i < NUM_SERVIZI; i++) {
+            printf("tot_sportelli %d: %d\n", i+1, tot_sportelli[i]);
+            puts("");
+        }
+        for(int i = 0; i < NUM_SERVIZI; i++) {
+            printf("tot_operatori %d: %d\n", i+1, tot_operatori[i]);
             puts("");
         }
 
@@ -562,16 +567,20 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         exit(EXIT_FAILURE);
     }
 
-    // Stampa statistiche giornaliere
     for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
         count_sportelli[shared_memory->sportelli[i] - 1]++;
         tot_sportelli[shared_memory->sportelli[i] - 1]++;
+    }
+    for (int i = 0; i < shared_memory->NOF_WORKERS; i++){
         count_operatori[shared_memory->lavoratori[i] - 1]++;
         tot_operatori[shared_memory->lavoratori[i] - 1]++;
     }
     
     for(int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
         printf("tot_sportelli: %d\n", tot_sportelli[i]);
+        puts("");
+    }
+    for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
         printf("tot_operatori: %d\n", tot_operatori[i]);
         puts("");
     }
