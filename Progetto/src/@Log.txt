@@ -15,7 +15,7 @@
 
 13/04
     - Cambiato sportello da processo a risorsa
-    - Iniziato code dei messaggi (da finire, aiutaci Sammy)
+    - Iniziato code dei messaggi (da finire)
     - Iniziato processo utente (gestione dei valori random)
 
 16/04
@@ -48,7 +48,6 @@
 
 05/05
     -fixata gestione giornata per utenti e operatori
-    -grazie sammy
     -CAPIRE PERCHE' NON FINISCE LA SIMULAZIONE
 
 08/05
@@ -95,7 +94,7 @@
 
 12/06
     - fatto la gestione delle NOF_PAUSE per gli operatori
-    - Sistemata la parte co(n)-glioni semafori in cicloOperativo (in Operatore)
+    - Sistemata la parte con semafori in cicloOperativo (in Operatore)
 
 14/06
     - Aggiunto gestione fine giornata in User
@@ -129,7 +128,6 @@
 26/06
     - Fixato bug relativo al lavoro 6 (non veniva svolto DAMN)
     - Sistemato le varie statistiche gg 
-    - JEWIGGER
 
 27/06
     - Finite le statistiche
@@ -147,7 +145,6 @@
 20/07
     - Quasi terminato la stampa sul file csv (manca la parte di statsSim che è sballata)
     - corretto alcune ridondanze (stampavamo più volte utenti tot in printStatsSim)
-    - SYBAU LUCA
 
 21/07
     - aggiustato la stampa e la scrittura delle statistiche nel file .csv (ma mancano altri campi)
@@ -156,15 +153,15 @@
     - aggiustato statistiche mancanti e rotte
     - Da correggere stat rapporto operatori/sportelli, tot_sportelli rotta in culo come la madonna
 
+23/07
+    - Aggiustato stat rapporto operatori/sportelli
+
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
     - Fare la relazione del progetto
-    - fare:
-        - stat rapporto operatori/sportelli
     - NO TOUCH IT PLZ CUZ è FATTO BENE (prega gli dei degli spaghetti code)
 
 PLUS -->
     - Fare la parte del progetto da 30 (statistiche in csv e altre cose)
-        - statistiche fatte ✅ (seh ti piacerebbe)
         - utenti con un array di richieste
         - NEW_USERS: aggiungi utenti durante la sim oppure prima?

@@ -87,7 +87,7 @@ void cicloOperativo(int semLavoratore, int i, int tipoLavoro, int msgid, int nan
  * @param count_sportelli Array con il conteggio degli sportelli per servizio
  * @param gg Giorno
  */
-void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *count_operatori, int *count_sportelli, int gg);
+void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *count_sportelli, int *count_operatori, int gg);
 
 /**
  * @brief Funzione per stampare le statistiche della simulazione

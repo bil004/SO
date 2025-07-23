@@ -75,7 +75,7 @@ void setValues(StatsDay *statsDay, int *count_sportelli, int *count_operatori) {
     }
 }
 
-void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *count_operatori, int *count_sportelli, int gg) {
+void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *count_sportelli, int *count_operatori, int gg) {
     // STAMPA SUL FILE .csv
     fprintf(csv, "%d;", gg);
     fprintf(csv, "%d;", statsDay->utenti_serviti);
@@ -104,7 +104,6 @@ void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *co
     fprintf(csv, "%d;", statsDay->pause_giornata);
 
     for (int i = 0; i < NUM_SERVIZI; i++) {
-        int index = i+1;
         if (count_sportelli[i] > 0)
             fprintf(csv, "%.4f;", (float)count_operatori[i] / count_sportelli[i]);
         else
@@ -146,8 +145,8 @@ void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *co
         int index = i+1;
         if (count_sportelli[i] > 0) {
             printf("Rapporto operatori/sportelli %d: %.4f\n", index, (float)count_operatori[i] / count_sportelli[i]);
-            printf("TOT OPERATORI PER SERVIZIO %d: %d\n", i+1, count_operatori[i]);
-            printf("TOT SPORTELLI PER SERVIZIO %d: %d\n", i+1, count_sportelli[i]);
+            printf("TOT OPERATORI PER SERVIZIO %d: %d\n", index, count_operatori[i]);
+            printf("TOT SPORTELLI PER SERVIZIO %d: %d\n", index, count_sportelli[i]);
         }
         else
             printf("Rapporto operatori/sportelli %d: %.4f\n", index, 0.0f);
@@ -184,8 +183,12 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
 
         puts("");
         for(int i = 0; i < NUM_SERVIZI; i++) {
-            if (tot_sportelli[i] > 0)
+            int index = i+1;
+            if (tot_sportelli[i] > 0) {
                 printf("Rapporto operatori/sportelli %d: %.4f\n", i+1, (float)tot_operatori[i] / tot_sportelli[i]);
+                printf("TOT OPERATORI PER SERVIZIO %d: %d\n", index, tot_operatori[i]);
+                printf("TOT SPORTELLI PER SERVIZIO %d: %d\n", index, tot_sportelli[i]);
+            }
             else
                 printf("Rapporto operatori/sportelli %d: %.4f\n", i+1, 0.0f);
         }
@@ -233,11 +236,8 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
         fprintf(csv, "%.5f;", (float)statsSim->operatori_attivi_tot/shared_memory->SIM_DURATION);
         
         for (int i = 0; i < NUM_SERVIZI; i++) { 
-            if (tot_sportelli[i] > 0) {
+            if (tot_sportelli[i] > 0)
                 fprintf(csv, "%.5f;", (float)tot_operatori[i] / tot_sportelli[i]);
-                printf("TOT OPERATORI PER SERVIZIO %d: %d\n", i+1, tot_operatori[i]);
-                printf("TOT SPORTELLI PER SERVIZIO %d: %d\n", i+1, tot_sportelli[i]);
-            }
             else
                 fprintf(csv, "%.5f;", 0.0f);
         }
@@ -254,8 +254,8 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
             int index = i+1;
             if (tot_sportelli[i] > 0) {
                 printf("Rapporto operatori/sportelli %d: %.5f\n", index, (float)tot_operatori[i] / tot_sportelli[i]);
-                printf("TOT OPERATORI PER SERVIZIO %d: %d\n", i+1, tot_operatori[i]);
-                printf("TOT SPORTELLI PER SERVIZIO %d: %d\n", i+1, tot_sportelli[i]);
+                printf("TOT OPERATORI PER SERVIZIO %d: %d\n", index, tot_operatori[i]);
+                printf("TOT SPORTELLI PER SERVIZIO %d: %d\n", index, tot_sportelli[i]);
             }
             else
                 printf("Rapporto operatori/sportelli %d: %.5f\n", index, 0.0f);
@@ -517,8 +517,8 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
         // Stampa statistiche giornaliere
         for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
-        count_sportelli[shared_memory->sportelli[i] - 1]++;
-        tot_sportelli[shared_memory->sportelli[i] - 1]++;
+            count_sportelli[shared_memory->sportelli[i] - 1]++;
+            tot_sportelli[shared_memory->sportelli[i] - 1]++;
         }
         for (int i = 0; i < shared_memory->NOF_WORKERS; i++){
             count_operatori[shared_memory->lavoratori[i] - 1]++;
@@ -527,10 +527,12 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         
         for(int i = 0; i < NUM_SERVIZI; i++) {
             printf("tot_sportelli %d: %d\n", i+1, tot_sportelli[i]);
+            printf("count_sportelli %d: %d\n", i+1, count_sportelli[i]);
             puts("");
         }
         for(int i = 0; i < NUM_SERVIZI; i++) {
             printf("tot_operatori %d: %d\n", i+1, tot_operatori[i]);
+            printf("count_operatori %d: %d\n", i+1, count_operatori[i]);
             puts("");
         }
 
@@ -576,12 +578,14 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         tot_operatori[shared_memory->lavoratori[i] - 1]++;
     }
     
-    for(int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
+    for(int i = 0; i < NUM_SERVIZI; i++) {
         printf("tot_sportelli: %d\n", tot_sportelli[i]);
+        printf("count_sportelli: %d\n", count_sportelli[i]);
         puts("");
     }
-    for(int i = 0; i < shared_memory->NOF_WORKERS; i++) {
+    for(int i = 0; i < NUM_SERVIZI; i++) {
         printf("tot_operatori: %d\n", tot_operatori[i]);
+        printf("count_operatori: %d\n", count_operatori[i]);
         puts("");
     }
 
@@ -589,7 +593,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     printStatsDay(shared_memory, statsDay, csv, count_sportelli, count_operatori, giorno+1);
     puts("\n");
     
-    printStatsSim(statsSim, csv, shared_memory, count_operatori, count_sportelli, shared_memory->DAYS_LEFT);
+    printStatsSim(statsSim, csv, shared_memory, tot_operatori, tot_sportelli, shared_memory->DAYS_LEFT);
     fclose(csv);
     
     puts("");
