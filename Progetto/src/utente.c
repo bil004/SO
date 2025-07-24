@@ -21,12 +21,11 @@ volatile sig_atomic_t terminate = 0;
 volatile sig_atomic_t nextDay = 0;
 
 void signal_handler(int sig) {
-    if (sig == SIGUSR1) {
+    if (sig == SIGUSR1) 
         terminate = 1; // Imposta il flag per terminare il processo
-    }
-    if (sig == SIGUSR2){
+    
+    if (sig == SIGUSR2)
         nextDay = 1; // Imposta il flag per il cambio giorno
-    }
 }
 
 void sem_op(int semid, int sem_num, int sem_op) {
@@ -36,17 +35,14 @@ void sem_op(int semid, int sem_num, int sem_op) {
     operazione.sem_flg = 0;       // Nessuna flag
 
     if (semop(semid, &operazione, 1) == -1) {
-        if (errno == EINTR) {
+        if (errno == EINTR) 
             printf("[USER] Processo %d: Semaforo interrotto da segnale.\n", getpid());
-        }
-        else{
+        else {
             perror("Errore nel semaforo");
-            exit(EXIT_FAILURE);
+            exit(1);
         }
     }
 }
-
-// uso la pipe per ricevere i dati da erogatore_ticket
 
 int main(int argc, char *argv[]) {
     if (argc != 6) {
@@ -54,32 +50,34 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    // --------------------------- INIZIALIZZAZIONE ---------------------------
     signal(SIGUSR1, signal_handler);
     signal(SIGUSR2, signal_handler);
     
-    // Attacca la memoria condivisa
+    // Attacca la memoria condivisa (Config)
     int shmId = atoi(argv[2]);
     Config *shared_memory = (Config *)shmat(shmId, NULL, 0);
     if (shared_memory == (Config *)-1) {
-        perror("Errore nell'attacco alla memoria condivisa");
-        exit(EXIT_FAILURE);
+        perror("[USER] shmat error (Config)");
+        exit(1);
     }
 
-    // Attacca la memoria condivisa
+    // Attacca la memoria condivisa per le statistiche (StatsDay e StatsSim)
     int shmId_StatsDay = atoi(argv[4]);
     int shmId_StatsSim = atoi(argv[5]);
+    
     StatsDay *statsDay = (StatsDay *)shmat(shmId_StatsDay, NULL, 0);
     if (statsDay == (StatsDay *)-1) {
-        perror("Errore nell'attacco alla memoria condivisa (StatsDay)");
-        exit(EXIT_FAILURE);
-    }
-    StatsSim *statsSim = (StatsSim *)shmat(shmId_StatsSim, NULL, 0);
-    if (statsSim == (StatsSim *)-1) {
-        perror("Errore nell'attacco alla memoria condivisa (StatsSim)");
-        exit(EXIT_FAILURE);
+        perror("[USER] shmat error (StatsDay)");
+        exit(1);
     }
 
-    //FINE INIZIALIZZAZIONE
+    StatsSim *statsSim = (StatsSim *)shmat(shmId_StatsSim, NULL, 0);
+    if (statsSim == (StatsSim *)-1) {
+        perror("[USER] shmat error (StatsSim)");
+        exit(1);
+    }
+
     int semUtente = atoi(argv[1]);
 
     //incrementa semaforo per informare il padre
@@ -90,10 +88,8 @@ int main(int argc, char *argv[]) {
     //Attende la risposta del padre
     sem_op(semUtente, 7, -1);
 
-    
-    //printf("Running utente %d\n", i);
-
     // -----------------------------------------------------------------------------
+
     while (shared_memory->DAYS_LEFT > 0 && !terminate) {
         puts("\033[1;31m\033[1m[USER] Sleeping till day starts\033[0m");
         sem_op(semUtente, 8, -1);
@@ -107,6 +103,7 @@ int main(int argc, char *argv[]) {
             nextDay = 0;
             continue;
         }
+        
         // Probabilità della decisione dell'utente
         int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
         srand(time(NULL)^getpid());
@@ -115,7 +112,7 @@ int main(int argc, char *argv[]) {
         int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
 
         
-        if(P_SERV <= fail) {
+        if (P_SERV <= fail) {
             int service = (rand() % 6) + 1;
             
             // Controlla se gli sportelli per il suo tipo di op. sono aperti, e se esiste un worker con quel lavoro        
@@ -140,16 +137,17 @@ int main(int argc, char *argv[]) {
                 // esegue erogatoreTicket
                 printf("\033[1;31m\033[1m[USER] %d va alla posta\033[0m\n", getpid());
 
-                // --------------CODA MSG USER-TICKET
+                // -------------- CODA MSG USER-TICKET --------------
                 key_t msgkeyEr = ftok("/tmp", 'U');
                 int msgid = msgget(msgkeyEr, 0666 | IPC_CREAT);
                 
                 // Invio della richiesta
                 TicketMsg req = {1, service, 0, getpid()};
                 msgsnd(msgid, &req, sizeof(TicketMsg) - sizeof(long), 0);
-                if(terminate || nextDay){
+                
+                if(terminate || nextDay)
                     nextDay = 0;
-                }else{
+                else {
                     puts("\033[1;31m\033[1m[USER] message send\033[0m");
 
                     // Ricezione della richiesta
@@ -188,10 +186,11 @@ int main(int argc, char *argv[]) {
                             break;
                     }
 
-                    int orario = (rand()%180) * shared_memory->N_NANO_SECS; //Sceglie un'orario tra 0 minuti e 3 ore dal momento della decisione
+                    // Sceglie un'orario tra 0 minuti e 3 ore dal momento della decisione
+                    int orario = (rand()%180) * shared_memory->N_NANO_SECS; 
                     nanosleep((const struct timespec[]){{0, orario}}, NULL);
                     
-                    // --------------CODA MSG USER-WORKER
+                    // -------------- CODA MSG USER-WORKER --------------
                     key_t msgkeyOp = ftok("/tmp", 'V');
                     int msgidOp = msgget(msgkeyOp, 0666 | IPC_CREAT);
 
@@ -206,10 +205,9 @@ int main(int argc, char *argv[]) {
                     printf("\033[1;31m\033[1m[USER] Invio il messaggio con pid: %d\033[0m\n", w.pid);
                     msgsnd(msgidOp, &w, sizeof(WorkerMsg) - sizeof(long), 0);
 
-                    if(terminate || nextDay){
+                    if (terminate || nextDay)
                         nextDay = 0;
-                    }
-                    else{
+                    else {
                         printf("\033[1;31m\033[1m[USER] Fine invio messaggio con pid: %d\033[0m\n", w.pid);
                         
                         puts("\033[1;31m\033[1m[USER] ha inviato la richiesta!\033[0m");
@@ -220,7 +218,7 @@ int main(int argc, char *argv[]) {
 
                         clock_t end = clock();
 
-                        if(terminate || nextDay){
+                        if (terminate || nextDay) {
                             printf("\033[1;31m\033[1m[USER] Utente %d è rimasto in coda ...\033[0m\n", getpid());
                             statsDay->servizi_non_erogati[service-1]++;
                             statsSim->servizi_non_erogati_tot[service-1]++;
@@ -241,20 +239,17 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-            else 
-                printf("\033[1;31m\033[1m[USER] %d non va alla posta (servizio non disponibile)\033[0m\n", getpid());
+            else printf("\033[1;31m\033[1m[USER] %d non va alla posta (servizio non disponibile)\033[0m\n", getpid());
         }
         else puts("\033[1;31m\033[1m[USER] Non vai alla posta\033[0m");
 
         sem_op(semUtente, 8, 0);
     }
 
-    // -----------------------------------------------------------------------------
-
     // Distacco della memoria condivisa
     if (shmdt(shared_memory) == -1) {
         perror("[USER] shmdt error!");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     printf("\033[1;31m\033[1m[USER] %d finito\033[0m\n", getpid());

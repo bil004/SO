@@ -1,9 +1,16 @@
-20/03 sincronizzazione inizializzazione processi Utente e direttore
-20/03 sincronizzazione inizializzazione processi Erogatore e direttore
-20/03 sincronizzazione inizializzazione processi Lavoratore e direttore
-20/03 sincronizzazione inizializzazione processi Sportello e direttore
+20/03 
+    - sincronizzazione inizializzazione processi Utente e direttore
 
-27/03 inizio lavoro su Operatore e capito come gestire il tempo della simulazione
+20/03 
+    - sincronizzazione inizializzazione processi Erogatore e direttore
+20/03 
+    - sincronizzazione inizializzazione processi Lavoratore e direttore
+
+20/03 
+    - sincronizzazione inizializzazione processi Sportello e direttore
+
+27/03 
+    - inizio lavoro su Operatore e capito come gestire il tempo della simulazione
 
 02/04 
     - Aggiustato errori nella parte dei semafori
@@ -19,45 +26,43 @@
     - Iniziato processo utente (gestione dei valori random)
 
 16/04
-    -IN CONF, N_NANO_SECS -> 1 minuto = 1 millisecondo
-    -aggiunto in Utenti la selezione dell'orario
-    -aggiustato le funzioni di nanosleep in direttore
-    -gestione giornata 8h lavoro - 16h riposo
+    - IN CONF, N_NANO_SECS -> 1 minuto = 1 millisecondo
+    - aggiunto in Utenti la selezione dell'orario
+    - aggiustato le funzioni di nanosleep in direttore
+    - gestione giornata 8h lavoro - 16h riposo
 
 17/04
-    -Implementata coda di messaggi per la simulazione degli sportelli
-    -IMPORTANTE SISTEMARE IN OPERATORE LA GESTIONE DEGLI SPORTELLI (da fare)
-    -aggiunto lavori ai lavoratori
+    - Implementata coda di messaggi per la simulazione degli sportelli
+    - IMPORTANTE SISTEMARE IN OPERATORE LA GESTIONE DEGLI SPORTELLI (da fare)
+    - aggiunto lavori ai lavoratori
 
 24/04
-    -i lavoratori possono lavorare tutti i giorni
-    -i lavoratori lavorano solo se ricevono il messaggio (uno sportello libero)
-    -Sistemato in operatore la gestione degli sportelli
-    -CAMBIARE TIPO DI SPORTELLO A FINE GIORNATA (mettere creazione messaggi in funzione a parte) (da fare) 
+    - i lavoratori possono lavorare tutti i giorni
+    - i lavoratori lavorano solo se ricevono il messaggio (uno sportello libero)
+    - Sistemato in operatore la gestione degli sportelli
+    - CAMBIARE TIPO DI SPORTELLO A FINE GIORNATA (mettere creazione messaggi in funzione a parte) (da fare) 
 
 28/04
-    -creato il cambiamento di sportello a fine giornata
-    -DA COMPLETARE LA GESTIONE DI UTENTE SU PIU' GIORNATE
+    - creato il cambiamento di sportello a fine giornata
 
 30/04
     -Progetto quasi cestinato
 
 02/05
-    -fixato utenti su più giorni
-    -modificato gestione dei giorni, DAY in shared memory al posto che semaforo
+    - fixato utenti su più giorni
+    - modificato gestione dei giorni, DAY in shared memory al posto che semaforo
 
 05/05
-    -fixata gestione giornata per utenti e operatori
-    -CAPIRE PERCHE' NON FINISCE LA SIMULAZIONE
+    - fixata gestione giornata per utenti e operatori
 
 08/05
-    -makefile creato
-    -fixato e defixato fine simulazione
-    -aggiunto messaggi di debug e la kill()
-    -correggere la chiusura dei processi e la rimozione dei semafori (DA FARE)
+    - makefile creato
+    - fixato e defixato fine simulazione
+    - aggiunto messaggi di debug e la kill()
+    - correggere la chiusura dei processi e la rimozione dei semafori (DA FARE)
 
 15/05
-    -risolta terminazione corretta dei processi
+    - risolta terminazione corretta dei processi
 
 20/05
     - Creato array sportelli in shared_memory (cosi abbiamo gli sportelli salvati)
@@ -70,7 +75,7 @@
 
 
 28/05
-    - Scritto e fatto operatore.c su più giorni (manca solo la gestione delle NOF_PAUSE e il ricevimento degli utenti [tempario])
+    - Scritto e fatto operatore.c su più giorni (manca solo la gestione delle NOF_PAUSE e il ricevimento degli utenti [tempiario])
     - Sistemato la chiusura di tutti i processi (era colpa di operatore.c che rimaneva sempre in attesa di msgrcv)
 
 
@@ -135,8 +140,8 @@
     - Messo i commenti stile Doxygen in functions.h
 
 16/07
-    -aggiustato errore dove il programma non terminava (un'operatore non faceva terminate)
-    -aggiustata la coda di messaggi sportelli (venivano reinseriti dagli operatori)
+    - aggiustato errore dove il programma non terminava (un'operatore non faceva terminate)
+    - aggiustata la coda di messaggi sportelli (venivano reinseriti dagli operatori)
 
 17/07
     - sistemato bug sulle configurazioni di explode (conflitto tra nextDay e terminate)
@@ -156,6 +161,8 @@
 23/07
     - Aggiustato stat rapporto operatori/sportelli
 
+24/07
+    - Sistemato i vari file, commentato tutti i file .h, sistemate le posizioni dei file nella directory "Progetto"
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
     - Fare la relazione del progetto

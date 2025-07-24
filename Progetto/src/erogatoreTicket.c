@@ -18,9 +18,8 @@
 volatile sig_atomic_t terminate = 0;
 
 void signal_handler(int sig) {
-    if (sig == SIGUSR1) {
+    if (sig == SIGUSR1) 
         terminate = 1; // Imposta il flag per terminare il processo
-    }
 }
 
 void sem_op(int semid, int sem_num, int sem_op) {
@@ -30,12 +29,11 @@ void sem_op(int semid, int sem_num, int sem_op) {
     operazione.sem_flg = 0;       // Nessuna flag
 
     if (semop(semid, &operazione, 1) == -1) {
-        if (errno == EINTR) {
+        if (errno == EINTR) 
             printf("Processo %d: Semaforo interrotto da segnale.\n", getpid());
-        }
-        else{
+        else {
             perror("Errore nel semaforo");
-            exit(EXIT_FAILURE);
+            exit(1);
         }
     }
 }
@@ -54,6 +52,7 @@ int main(int argc, char *argv[]) {
     //incrementa semaforo per informare il padre
     sem_op(semErogatore, 0, 1);
     printf("\033[1;33m\033[1m[TICKET] Inizializzazione Erogatore Terminata\033[0m\n");
+    
     //Attende la risposta del padre
     sem_op(semErogatore, 4, -1);
     

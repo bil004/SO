@@ -17,15 +17,10 @@
 #include "../include/config.h"
 #include "../include/functions.h"
 
-void errExit(char* s) {
-    perror(s);
-    exit(EXIT_FAILURE);
-}
-
 void signal_handler(int sig) {
     if (sig == SIGUSR1) {
-        perror("[DIRECTOR] Direttore Ucciso");
-        exit(EXIT_FAILURE); // Imposta il flag per terminare il processo
+        perror("[DIRECTOR] Direttore terminato");
+        exit(1); // Imposta il flag per terminare il processo
     }
 }
 
@@ -37,12 +32,11 @@ void sem_op(int semid, int sem_num, int sem_op) {
 
     if (semop(semid, &operazione, 1) == -1) {
         perror("[DIRECTOR] Errore nell'operazione sul semaforo");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 }
 
 void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message) {
-
     for(int i = 0; i< shared_memory->NOF_WORKER_SEATS; i++){
         Sportello sp;
         sp.tipoLavoro = (rand() % 6) + 1; //tipo lavoro da 1 a 6
@@ -56,7 +50,6 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message) {
         
         //invio messaggio sulla coda
         msgsnd(msgId, message, sizeof(Sportello), 0);
-
     }
 }
 
@@ -110,6 +103,8 @@ void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *co
             fprintf(csv, "%.4f;", 0.0f);
     }
     fprintf(csv, "\n");
+
+    // -----------------------------------------------------------------------------
 
     // STAMPA A VIDEO
     printf("\n--- STATISTICHE GIORNO %d ---\n", gg);
@@ -193,6 +188,8 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
                 printf("Rapporto operatori/sportelli %d: %.4f\n", i+1, 0.0f);
         }
 
+        // -----------------------------------------------------------------------------
+        
         // STAMPA SUL FILE
         fprintf(csv, "\n\n\nSTATISTICHE FINALI\n");
         fprintf(csv, "Utenti serviti totali;Media Utenti serviti totali;");
@@ -223,13 +220,11 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
         
         fprintf(csv, "%.5f;", statsSim->tempo_attesa_utenti_tot);
 
-        for (int i = 0; i < NUM_SERVIZI; i++) {
+        for (int i = 0; i < NUM_SERVIZI; i++) 
             fprintf(csv, "%.5f;", statsSim->tempo_erogazione_servizi_tot[i]);
-        }  
         
-        for (int i = 0; i < NUM_SERVIZI; i++) {
+        for (int i = 0; i < NUM_SERVIZI; i++) 
             fprintf(csv, "%.5f;", (float)statsSim->tempo_erogazione_servizi_tot[i]/shared_memory->SIM_DURATION);
-        } 
         
         fprintf(csv, "%d;", statsSim->operatori_attivi_tot);
         fprintf(csv, "%d;", statsSim->pause_tot);
@@ -260,7 +255,6 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
             else
                 printf("Rapporto operatori/sportelli %d: %.5f\n", index, 0.0f);
         }
-        
     }
 }
 
@@ -276,41 +270,39 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     snprintf(shm_id_StatsSim_str, 10, "%d", shm_id_StatsSim);
     snprintf(semWaitInit_str, 10, "%d", semWaitInit);
 
-    //Creazione processi figli
-    //-----------------Erogatore Ticket------------------
+    // Creazione processi figli
+    // ----------------- Erogatore Ticket ------------------
     pid_t erogatoreTicket = fork();
     switch(erogatoreTicket) {
         case -1:
-            perror("[DIRECTOR] erogatore_ticket not created!");
-            exit(EXIT_FAILURE);
-            break;
+            perror("[DIRECTOR] erogatoreTicket not created!");
+            exit(1);
 
         case 0:
             printf("\033[1;32m[DIRECTOR] Erogatore ticket con pid:%d\033[0m\n", getpid());
             execl("./erogatoreTicket", "./erogatoreTicket", semWaitInit_str, shm_id_str, shm_id_StatsDay_str, shm_id_StatsSim_str, NULL);
-            errExit("execl failure!");
-            break;
+            
+            perror("[DIRECTOR] execl failure! (erogatoreTicket)");
+            exit(1);
             
         default:
             pid_array[j] = erogatoreTicket;
             j++;
-            break;
     }
 
-    //-------------------Inizializzazione Sportelli---------------------
-
-    //Creare la Coda di messaggi per i lavoratori
+    // -----------------  Sportelli -----------------
     int msgId = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
     if (msgId == -1) {
-        perror("[DIRECTOR] Errore coda di messaggi!");
+        perror("[DIRECTOR] msgget failure! (sportelli)");
         exit(1);
     }
+
     struct msgbuf message;
     struct msqid_ds buf;
     msg_enqueue(shared_memory, msgId, &message);
     
 
-    //-------------------Operatori-----------------
+    // ----------------- Operatori -----------------
     pid_t* opUsrPid = malloc(sizeof(pid_t) * (shared_memory->NOF_WORKERS + shared_memory->NOF_USERS));
     char tipiWorkers[64];
 
@@ -319,61 +311,65 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         pid_t Lavoratore = fork();
         switch(Lavoratore) {
             case -1:
-                errExit("[DIRECTOR] operatore process error!");
-                break;
+                perror("[DIRECTOR] operatore not created!");
+                exit(1);
 
             case 0:
                 srand(time(NULL)^getpid());
+                
                 char I[64];
                 char msgId_str[64];
+                
                 sprintf(I, "%d", i);
                 sprintf(msgId_str, "%d", msgId);
+                
                 int tipolavoro = (rand() % 6) + 1;
                 shared_memory->lavoratori[k] = tipolavoro;
+                
                 char tipoLavoro_str[64];
                 sprintf(tipoLavoro_str, "%d", tipolavoro);
+                
                 execl("./operatore", "./operatore", semWaitInit_str, shm_id_str, I, msgId_str, tipoLavoro_str, shm_id_StatsDay_str, shm_id_StatsSim_str, NULL);
-                errExit("[DIRECTOR] execl failure!");
-                break;
+                perror("[DIRECTOR] execl failure! (operatore)");
+                exit(1);
 
             default:
                 pid_array[j] = Lavoratore;
                 opUsrPid[k] = Lavoratore;
                 k++;
                 j++;
-                break;
-
         }
     }
 
-    //-------------------Utenti------------------
+    // ------------------- Utenti -------------------
     for(int i = 0; i < shared_memory->NOF_USERS; i++) {
         pid_t Utente = fork();
         switch(Utente) {
             case -1:
-                errExit("[DIRECTOR] utente process error!");
-                break;
+                perror("[DIRECTOR] utente process error!");
+                exit(1);
             
             case 0:
                 char I[64];
                 sprintf(I, "%d", i);
+                
                 execl("./utente", "./utente", semWaitInit_str, shm_id_str, I, shm_id_StatsDay_str, shm_id_StatsSim_str, NULL);
-                errExit("[DIRECTOR] execl failure!");
-                break;
+                
+                perror("[DIRECTOR] execl failure!");
+                exit(1);
 
             default:
                 opUsrPid[k] = Utente;
                 pid_array[j] = Utente;
                 j++;
                 k++;
-                break;
         }
     }
 
     //aspetta inizializzazione FIGLI
-    for(int i=0; i<shared_memory->NOF_USERS; i++){
+    for(int i=0; i<shared_memory->NOF_USERS; i++)
         sem_op(semWaitInit, 3, -1);
-    }
+    
     puts("[DIRECTOR] Inizializzazione USER Terminata");
 
     //aspetta inizializzazione EROGATORE
@@ -381,11 +377,12 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     puts("[DIRECTOR] Inizializzazione EROGATORE Terminata");
 
     //aspetta inizializzazione LAVORATORI
-    for(int i=0; i<shared_memory->NOF_WORKERS; i++){
+    for(int i=0; i<shared_memory->NOF_WORKERS; i++)
         sem_op(semWaitInit, 2, -1);
-    }
+    
     printf("\033[1;32m[DIRECTOR] Inizializzazione LAVORATORI Terminata\033[0m\n");
 
+    // Inizializzazione Statistiche
     statsSim->utenti_serviti_tot = 0;
     statsSim->tempo_attesa_utenti_tot = 0;
     statsSim->operatori_attivi_tot = 0;
@@ -401,7 +398,6 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     for (int i = 0; i < MAX_SPORTELLI; i++) 
         statsSim->rapporto_op_sportelli_media[i] = 0;
 
-
     int count_sportelli[NUM_SERVIZI] = {0};
     int count_operatori[NUM_SERVIZI] = {0};
 
@@ -410,8 +406,11 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
     float userAvgTot = 0;
     
+    // -----------------------------------------------------------------------------
+
     puts("\nSESSIONE INIZIATA");
 
+    // Creazione file statsSim.csv
     FILE *csv = fopen("../data/statsSim.csv", "w");
     if (csv == NULL) {
         perror("[DIRECTOR] file error!");
@@ -428,7 +427,6 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     fprintf(csv, "Rapporto Operatori/Sportelli(1);Rapporto Operatori/Sportelli(2);Rapporto Operatori/Sportelli(3);Rapporto Operatori/Sportelli(4);Rapporto Operatori/Sportelli(5);Rapporto Operatori/Sportelli(6)\n");
     
     int giorno;
-    // creare un semaforo mutex giornata attiva
     for (giorno = 0; giorno < shared_memory->SIM_DURATION; giorno++) {
         // resetta i valori giornalieri di smStats
         setValues(statsDay, count_sportelli, count_operatori);
@@ -455,9 +453,9 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
         //Svuoto coda degli sportelli
         int result;
-        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) {
+        while ((result = msgrcv(msgId, &message, sizeof(message.mtext), 0, IPC_NOWAIT)) != -1) 
             printf("SPORTELLO TIPO %d RIMOSSO\n", message.mtext.tipoLavoro);
-        }
+        
 
         shared_memory->DAYS_LEFT--;
         printf("\033[1;32m[DIRECTOR] Giorni rimanenti: %d\033[0m\n", shared_memory->DAYS_LEFT);
@@ -482,10 +480,10 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         if(shared_memory->DAYS_LEFT != 0) {
             for (int i = 0; i < shared_memory->NOF_WORKERS + shared_memory->NOF_USERS; i++) {
                 if (kill(opUsrPid[i], 0) == 0) {
-                    if (kill(opUsrPid[i], SIGUSR2) == -1) {
+                    if (kill(opUsrPid[i], SIGUSR2) == -1) 
                         perror("[DIRECTOR] errore invio segnale");
-                    }
-                    else printf("\033[1;32m[DIRECTOR] Figlio segnale uscita PID: %d\033[0m\n", opUsrPid[i]);
+                    else 
+                        printf("\033[1;32m[DIRECTOR] Figlio segnale uscita PID: %d\033[0m\n", opUsrPid[i]);
                 }
             }
             msg_enqueue(shared_memory, msgId, &message);
@@ -506,10 +504,10 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
             // signal ia figli per interrompere attesa su nuovo giorno
             for (int i = 0; i < shared_memory->NOF_USERS + shared_memory->NOF_WORKERS + 1; i++) {
                 if (kill(pid_array[i], 0) == 0) {
-                    if (kill(pid_array[i], SIGUSR1) == -1) {
+                    if (kill(pid_array[i], SIGUSR1) == -1) 
                         perror("[DIRECTOR] Errore nell'invio del segnale");
-                    }
-                    else printf("\033[1;32m[DIRECTOR] Segnale inviato a PID: %d\033[0m\n", pid_array[i]);
+                    else 
+                        printf("\033[1;32m[DIRECTOR] Segnale inviato a PID: %d\033[0m\n", pid_array[i]);
                 } 
             }
             break;
@@ -520,6 +518,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
             count_sportelli[shared_memory->sportelli[i] - 1]++;
             tot_sportelli[shared_memory->sportelli[i] - 1]++;
         }
+
         for (int i = 0; i < shared_memory->NOF_WORKERS; i++){
             count_operatori[shared_memory->lavoratori[i] - 1]++;
             tot_operatori[shared_memory->lavoratori[i] - 1]++;
@@ -530,15 +529,16 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
             printf("count_sportelli %d: %d\n", i+1, count_sportelli[i]);
             puts("");
         }
+
         for(int i = 0; i < NUM_SERVIZI; i++) {
             printf("tot_operatori %d: %d\n", i+1, tot_operatori[i]);
             printf("count_operatori %d: %d\n", i+1, count_operatori[i]);
             puts("");
         }
 
-
+        
+        // Aggiornamento delle statistiche giornaliere/simulazione
         int gg = giorno+1;
-
         printStatsDay(shared_memory, statsDay, csv, count_sportelli, count_operatori, gg);
         puts("");
         
@@ -558,21 +558,20 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
                 perror("[DIRECTOR] Errore durante waitpid");
                 break;
             }
-        } else {
-            //printf("Figlio terminato, PID: %d\n", pid);
         }
     }
     
     // Deallocazione della coda di messaggi
     if (msgctl(msgId, IPC_RMID, NULL) == -1) {
         perror("[DIRECTOR] Errore nella deallocazione della coda di messaggi");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     for (int i = 0; i < shared_memory->NOF_WORKER_SEATS; i++) {
         count_sportelli[shared_memory->sportelli[i] - 1]++;
         tot_sportelli[shared_memory->sportelli[i] - 1]++;
     }
+
     for (int i = 0; i < shared_memory->NOF_WORKERS; i++){
         count_operatori[shared_memory->lavoratori[i] - 1]++;
         tot_operatori[shared_memory->lavoratori[i] - 1]++;
@@ -583,6 +582,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         printf("count_sportelli: %d\n", count_sportelli[i]);
         puts("");
     }
+    
     for(int i = 0; i < NUM_SERVIZI; i++) {
         printf("tot_operatori: %d\n", tot_operatori[i]);
         printf("count_operatori: %d\n", count_operatori[i]);
@@ -590,6 +590,8 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
     }
 
     puts("");
+    
+    // Aggiornamento delle statistiche giornaliere/simulazione
     printStatsDay(shared_memory, statsDay, csv, count_sportelli, count_operatori, giorno+1);
     puts("\n");
     
@@ -604,7 +606,7 @@ void load_config(const char *filename, Config *config) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         perror("Errore nell'apertura del file");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     char line[256];
@@ -612,23 +614,22 @@ void load_config(const char *filename, Config *config) {
         char key[50];
         int value;
         if (sscanf(line, "%[^=]=%d", key, &value) == 2) {
-            if (strcmp(key, "NOF_WORKER_SEATS") == 0) {
+            if (strcmp(key, "NOF_WORKER_SEATS") == 0) 
                 config->NOF_WORKER_SEATS = value;
-            } else if (strcmp(key, "NOF_WORKERS") == 0) {
+            else if (strcmp(key, "NOF_WORKERS") == 0) 
                 config->NOF_WORKERS = value;
-            } else if (strcmp(key, "NOF_USERS") == 0) {
+            else if (strcmp(key, "NOF_USERS") == 0) 
                 config->NOF_USERS = value;
-            } else if (strcmp(key, "SIM_DURATION") == 0) {
+            else if (strcmp(key, "SIM_DURATION") == 0) 
                 config->SIM_DURATION = value;
-            } else if (strcmp(key, "N_NANO_SECS") == 0) {
+            else if (strcmp(key, "N_NANO_SECS") == 0) 
                 config->N_NANO_SECS = value;
-            } else if (strcmp(key, "NOF_PAUSE") == 0) {
+            else if (strcmp(key, "NOF_PAUSE") == 0) 
                 config->NOF_PAUSE = value;
-            } else if (strcmp(key, "EXPLODE_THRESHOLD") == 0) {
+            else if (strcmp(key, "EXPLODE_THRESHOLD") == 0) 
                 config->EXPLODE_THRESHOLD = value;
-            } else if (strcmp(key, "P_PAUSE") == 0) {
+            else if (strcmp(key, "P_PAUSE") == 0) 
                 config->P_PAUSE = value;
-            } 
         }
     }
 
@@ -637,56 +638,57 @@ void load_config(const char *filename, Config *config) {
 }
 
 int main(int argc, char *argv[]) {
-    // Caricamento configurazione
     Config config;
-    load_config("../src/post_office.conf", &config);
+    load_config("../data/post_office.conf", &config);
 
-    // Crea memoria condivisa per passare le config ai figli
+    // Creazione memoria condivisa (Config)
     int shm_id = shmget(IPC_PRIVATE, sizeof(Config), IPC_CREAT | 0666);
     if (shm_id == -1) {
         perror("shmget");
         exit(1);
     }
 
-    // Crea memoria condivisa per tener traccia delle statistiche
+    // Creazione memoria condivisa (StatsDay, StatsSim)
     int shm_id_StatsDay = shmget(IPC_PRIVATE, sizeof(StatsDay), IPC_CREAT | 0666);
     if (shm_id_StatsDay == -1) {
         perror("Errore nell'attacco alla memoria condivisa (StatsDay)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
+
     int shm_id_StatsSim = shmget(IPC_PRIVATE, sizeof(StatsSim), IPC_CREAT | 0666);
     if (shm_id_StatsSim == -1) {
         perror("Errore nell'attacco alla memoria condivisa (StatsSim)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     // Attacca la memoria condivisa (Config)
     Config *shared_memory = (Config *)shmat(shm_id, NULL, 0);
     if (shared_memory == (Config *)-1) {
         perror("Errore nell'attacco alla memoria condivisa (Config)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     *shared_memory = config;
 
-    // Attacca la memoria condivisa (Stats)
+    // Attacca la memoria condivisa (StatsDay, StatsSim)
     StatsDay *statsDay = (StatsDay *)shmat(shm_id_StatsDay, NULL, 0);
     if (statsDay == (void *)-1) {
         perror("Errore nell'attacco alla memoria condivisa (StatsDay)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     StatsSim *statsSim = (StatsSim *)shmat(shm_id_StatsSim, NULL, 0);
     if (statsSim == (void *)-1) {
         perror("Errore nell'attacco alla memoria condivisa (StatsSim)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
-    // Crea semaforo per l'attesa dell'inizializzazione dei figli
+    // Creazione semafori
     int semWaitInit = semget(IPC_PRIVATE, 9, IPC_CREAT | 0666);
     if (semWaitInit == -1) {
         perror("semget failed");
         exit(1);
     }
-    for(int i=0; i<9; i++){
+    
+    for(int i=0; i < 9; i++){
         if(semctl(semWaitInit, i, SETVAL, 0) == -1) {
             perror("semctl failed");
             exit(1);
@@ -696,38 +698,46 @@ int main(int argc, char *argv[]) {
     signal(SIGUSR1, signal_handler);
 
     bool explode = false;
+    
     // Avvia simulazione
     direttore(semWaitInit, shm_id, shm_id_StatsDay, shm_id_StatsSim, shared_memory, statsDay, statsSim, &explode);
 
     // Detach e cleanup
     if (shmdt(shared_memory) == -1) {
         perror("[DIRECTOR] shmdt error!");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
+    
     if (shmdt(statsDay) == -1) {
         perror("[DIRECTOR] shmdt error! (StatsDay)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
+    
     if (shmdt(statsSim) == -1) {
         perror("[DIRECTOR] shmdt error! (StatsSim)");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
+    
     if (shmctl(shm_id, IPC_RMID, NULL) == -1) {
         perror("shmctl failed");
         exit(1);
     }
+    
     if (shmctl(shm_id_StatsDay, IPC_RMID, NULL) == -1) {
         perror("shmctl failed (StatsDay)");
         exit(1);
     }
+    
     if (shmctl(shm_id_StatsSim, IPC_RMID, NULL) == -1) {
         perror("shmctl failed (StatsSim)");
         exit(1);
     }
+    
     if(semctl(semWaitInit, 0, IPC_RMID) == -1) {
         perror("semctl failed");
         exit(1);
     }
+    
     puts("");
     printf("\033[1;32m\033[1mSIMULAZIONE TERMINATA!\033[0m\n");
 
@@ -737,6 +747,5 @@ int main(int argc, char *argv[]) {
     else
         puts("Simulazione terminata prematuramente (EXPLODE)");
         
-
     exit(0);
 }
