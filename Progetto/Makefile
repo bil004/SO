@@ -1,5 +1,6 @@
 SRC_DIR = src
 BIN_DIR = bin
+DATA_BIN = data
 
 CC = gcc
 CFLAGS = -Wvla -Wextra -Werror -I -D_GNU_SOURCE$(SRC_DIR)
@@ -17,3 +18,4 @@ makedir:
 
 clean:
 	rm -rf $(BIN_DIR)
+	rm -rf $(DATA_BIN)/*.csv
