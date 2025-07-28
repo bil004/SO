@@ -69,8 +69,6 @@ typedef struct Config {
     int SIM_DURATION;       ///< Durata complessiva della simulazione.
     int DAYS_LEFT;          ///< Giorni rimanenti nella simulazione.
     int N_NANO_SECS;        ///< Fattore di tempo per la simulazione in nanosecondi.
-    int SERVICE;            ///< Numero di servizi disponibili.
-    int TIME_SERVICE;       ///< Tempo medio di servizio.
     int P_SERV_MIN;         ///< Percentuale minima assegnabile a un servizio.
     int P_SERV_MAX;         ///< Percentuale massima assegnabile a un servizio.
     int NOF_PAUSE;          ///< Numero di pause concesse a ciascun lavoratore.
