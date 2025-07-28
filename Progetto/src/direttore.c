@@ -741,7 +741,7 @@ int main(int argc, char *argv[]) {
     puts("");
     printf("\033[1;32m\033[1mSIMULAZIONE TERMINATA!\033[0m\n");
 
-    // Controllare se viene raggiunto l'explode TrashHold
+    // Controllare se viene raggiunto l'EXPLODE_THRESHOLD
     if (!explode) 
         puts("Simulazione terminata correttamente!(TIMEOUT)");
     else
