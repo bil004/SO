@@ -163,6 +163,11 @@
 
 24/07
     - Sistemato i vari file, commentato tutti i file .h, sistemate le posizioni dei file nella directory "Progetto"
+
+29/07
+    - Started PLUS (AHAHAHA abbiamo solo chiesto a GippyTIH.!?🥹)
+
+
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
     - Fare la relazione del progetto
