@@ -167,6 +167,7 @@
 
 TO DO-->
     - Aggiungere mutua esclusione durante scrittura in shared memory (opzionale)
+    - 
 
 PLUS -->
     - Fare la parte del progetto da 30 (statistiche in csv e altre cose)

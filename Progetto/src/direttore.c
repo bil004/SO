@@ -55,6 +55,7 @@ void msg_enqueue(Config* shared_memory, int msgId, struct msgbuf *message) {
 
 void setValues(StatsDay *statsDay, int *count_sportelli, int *count_operatori) {
     statsDay->utenti_serviti = 0;
+    statsDay->utenti_non_serviti = 0;
     statsDay->operatori_attivi = 0;
     statsDay->pause_giornata = 0;
     statsDay->tempo_attesa_utenti = 0;
@@ -72,6 +73,7 @@ void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *co
     // STAMPA SUL FILE .csv
     fprintf(csv, "%d;", gg);
     fprintf(csv, "%d;", statsDay->utenti_serviti);
+    fprintf(csv, "%d;", statsDay->utenti_non_serviti);
     fprintf(csv, "%.2f;", (float)statsDay->utenti_serviti/shared_memory->NOF_USERS);
 
     for(int s = 0; s < NUM_SERVIZI; s++) 
@@ -109,6 +111,7 @@ void printStatsDay(Config *shared_memory, StatsDay *statsDay, FILE *csv, int *co
     // STAMPA A VIDEO
     printf("\n--- STATISTICHE GIORNO %d ---\n", gg);
     printf("Utenti serviti oggi: %d\n", statsDay->utenti_serviti);
+    printf("Utenti non serviti: %d\n", statsDay->utenti_non_serviti);
     printf("Utenti serviti in media oggi: %.2f\n", (float)statsDay->utenti_serviti/shared_memory->NOF_USERS);
     printf("Operatori attivi oggi: %d\n", statsDay->operatori_attivi);
     printf("Tempo attesa utenti: %f\n", statsDay->tempo_attesa_utenti);
@@ -153,6 +156,7 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
         // STAMPA A VIDEO
         puts("\n--- STATISTICHE SIMULAZIONE ---\n");
         printf("Utenti serviti totali: %d\n", statsSim->utenti_serviti_tot);
+        printf("Utenti non serviti totali: %d\n", statsSim->utenti_non_serviti_tot);
         printf("Utenti serviti in media: %.2f\n", (float)statsSim->utenti_serviti_tot/shared_memory->SIM_DURATION);
         printf("Operatori attivi totali: %d\n", statsSim->operatori_attivi_tot);
         printf("Tempo attesa utenti: %.4f\n", statsSim->tempo_attesa_utenti_tot);
@@ -192,7 +196,7 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
         
         // STAMPA SUL FILE
         fprintf(csv, "\n\n\nSTATISTICHE FINALI\n");
-        fprintf(csv, "Utenti serviti totali;Media Utenti serviti totali;");
+        fprintf(csv, "Utenti serviti totali;Utenti non serviti totali;Media Utenti serviti totali;");
         fprintf(csv, "Tot Servizio 1 erogati;Tot Servizio 2 erogati;Tot Servizio 3 erogati;Tot Servizio 4 erogati;Tot Servizio 5 erogati;Tot Servizio 6 erogati;");
         fprintf(csv, "Tot Servizio 1 non erogati;Tot Servizio 2 non erogati;Tot Servizio 3 non erogati;Tot Servizio 4 non erogati;Tot Servizio 5 non erogati;Tot Servizio 6 non erogati;");
         fprintf(csv, "Servizio 1 erogato in media al giorno;Servizio 2 erogato in media al giorno;Servizio 3 erogato in media al giorno;Servizio 4 erogato in media al giorno;Servizio 5 erogato in media al giorno;Servizio 6 erogato in media al giorno;");
@@ -204,6 +208,7 @@ void printStatsSim(StatsSim *statsSim, FILE *csv, Config *shared_memory, int *to
         fprintf(csv, "Rapporto Operatori/Sportelli(1);Rapporto Operatori/Sportelli(2);Rapporto Operatori/Sportelli(3);Rapporto Operatori/Sportelli(4);Rapporto Operatori/Sportelli(5);Rapporto Operatori/Sportelli(6)\n");
 
         fprintf(csv, "%d;", statsSim->utenti_serviti_tot);
+        fprintf(csv, "%d;", statsSim->utenti_non_serviti_tot);
         fprintf(csv, "%.5f;", (float)statsSim->utenti_serviti_tot/shared_memory->SIM_DURATION);
         
         for (int i = 0; i < NUM_SERVIZI; i++) 
@@ -384,6 +389,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
 
     // Inizializzazione Statistiche
     statsSim->utenti_serviti_tot = 0;
+    statsSim->utenti_non_serviti_tot = 0;
     statsSim->tempo_attesa_utenti_tot = 0;
     statsSim->operatori_attivi_tot = 0;
     statsSim->pause_tot = 0;
@@ -417,7 +423,7 @@ void direttore(int semWaitInit, int shm_id, int shm_id_StatsDay, int shm_id_Stat
         exit(1);
     }
 
-    fprintf(csv, "Giorno;Utenti serviti;Media Utenti serviti;");
+    fprintf(csv, "Giorno;Utenti serviti;Utenti non serviti;Media Utenti serviti;");
     fprintf(csv, "Tot Servizio 1 erogati;Tot Servizio 2 erogati;Tot Servizio 3 erogati;Tot Servizio 4 erogati;Tot Servizio 5 erogati;Tot Servizio 6 erogati;");
     fprintf(csv, "Tot Servizio 1 non erogati;Tot Servizio 2 non erogati;Tot Servizio 3 non erogati;Tot Servizio 4 non erogati;Tot Servizio 5 non erogati;Tot Servizio 6 non erogati;");
     fprintf(csv, "Tempo medio attesa utenti (min);");
@@ -624,6 +630,10 @@ void load_config(const char *filename, Config *config) {
                 config->SIM_DURATION = value;
             else if (strcmp(key, "N_NANO_SECS") == 0) 
                 config->N_NANO_SECS = value;
+            else if (strcmp(key, "P_SERV_MIN") == 0)
+                config->P_SERV_MIN = value;
+            else if (strcmp(key, "P_SERV_MAX") == 0)
+                config->P_SERV_MAX = value;
             else if (strcmp(key, "NOF_PAUSE") == 0) 
                 config->NOF_PAUSE = value;
             else if (strcmp(key, "EXPLODE_THRESHOLD") == 0) 

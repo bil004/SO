@@ -105,14 +105,16 @@ int main(int argc, char *argv[]) {
         }
         
         // Probabilità della decisione dell'utente
-        int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
         srand(time(NULL)^getpid());
-        int P_SERV = (rand() % intervallo) + shared_memory->P_SERV_MIN;
-        srand(time(NULL)^(getpid()+1));
-        int fail = (rand() % intervallo) + shared_memory->P_SERV_MIN;
-
+        int intervallo = shared_memory->P_SERV_MAX - shared_memory->P_SERV_MIN + 1;
+        int P_SERV, prob = rand()% 100;
         
-        if (P_SERV <= fail) {
+        if (intervallo > 0) 
+            P_SERV = (rand() % intervallo) + shared_memory->P_SERV_MIN;
+        else 
+            P_SERV = shared_memory->P_SERV_MIN;
+
+        if (prob < P_SERV) {
             int service = (rand() % 6) + 1;
             
             // Controlla se gli sportelli per il suo tipo di op. sono aperti, e se esiste un worker con quel lavoro        
@@ -239,7 +241,13 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-            else printf("\033[1;31m\033[1m[USER] %d non va alla posta (servizio non disponibile)\033[0m\n", getpid());
+            else {
+                printf("\033[1;31m\033[1m[USER] %d non va alla posta (servizio non disponibile)\033[0m\n", getpid());
+                statsDay->servizi_non_erogati[service-1]++;
+                statsSim->servizi_non_erogati_tot[service-1]++;
+                statsDay->utenti_non_serviti++;
+                statsSim->utenti_non_serviti_tot++;
+            }
         }
         else puts("\033[1;31m\033[1m[USER] Non vai alla posta\033[0m");
 

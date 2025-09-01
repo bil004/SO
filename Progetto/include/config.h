@@ -83,6 +83,7 @@ typedef struct Config {
  */
 typedef struct StatsDay {
     int utenti_serviti;                             ///< Numero totale di utenti serviti nel giorno.
+    int utenti_non_serviti;                         ///< Numero totale di utenti non serviti nel giorno.
     int servizi_erogati[NUM_SERVIZI];               ///< Servizi erogati per ciascun tipo.
     int servizi_non_erogati[NUM_SERVIZI];           ///< Servizi richiesti ma non erogati.
     float tempo_attesa_utenti;                      ///< Tempo medio di attesa degli utenti.
@@ -96,6 +97,7 @@ typedef struct StatsDay {
  */
 typedef struct StatsSim {
     int utenti_serviti_tot;                         ///< Totale utenti serviti.
+    int utenti_non_serviti_tot;                     ///< Totale utenti non serviti.
     int servizi_erogati_tot[NUM_SERVIZI];           ///< Totale servizi erogati per tipo.
     int servizi_non_erogati_tot[NUM_SERVIZI];       ///< Totale servizi non erogati per tipo.
     float servizi_non_erogati_media_giorno[NUM_SERVIZI]; ///< Media giornaliera dei servizi non erogati.
