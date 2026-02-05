@@ -1,56 +1,41 @@
-# Sistemi Operativi 2024/25
+# Operating Systems 2024/25
 
-## Simulazione di un Ufficio Postale
+## Post Office Simulation
 
-Questo progetto, sviluppato per il corso di **Sistemi Operativi** (a.a. 2024/2025), simula il funzionamento di un ufficio postale tramite l’utilizzo di processi concorrenti, memoria condivisa, semafori e code di messaggi.
-
----
-
-### 🧩 Obiettivi principali
-- Simulare la gestione quotidiana di un ufficio postale.
-- Modellare i comportamenti di utenti, sportelli e operatori.
-- Gestire ticket e code in modo realistico.
-- Raccogliere statistiche giornaliere e complessive.
-- Implementare meccanismi di terminazione della simulazione (durata massima o sovraccarico di richieste).
+This project, developed for the **Operating Systems** course (a.y. 2024/2025), simulates the operation of a post office using concurrent processes, shared memory, semaphores, and message queues.
 
 ---
 
-### 🏗️ Componenti principali
-- **Processo Direttore**: gestisce la simulazione, crea i processi e raccoglie le statistiche.
-- **Processo Erogatore Ticket**: assegna i ticket agli utenti.
-- **Processi Operatore**: gestiscono sportelli specializzati e servono gli utenti.
-- **Processi Utente**: si recano all’ufficio postale e richiedono servizi.
-- **Risorse condivise**: memoria condivisa, semafori e code di messaggi.
+### 🧩 Key Objectives
+- Simulate the daily management of a post office.
+- Model the behavior of users, counters, and operators.
+- Manage tickets and queues realistically.
+- Collect daily and overall statistics.
+- Implement simulation termination mechanisms (maximum duration or request overload).
 
 ---
 
-### ⚙️ Tecnologie e strumenti
-- Linguaggio: **C**
-- Meccanismi IPC: **memoria condivisa**, **semafori**, **code di messaggi**
-- Compilazione: **Makefile**
-- Documentazione tecnica: **Doxygen**
-- Output delle statistiche in formato **CSV**
+### 🏗️ Main Components
+- **Director Process**: Manages the simulation, creates processes, and collects statistics.
+- **Ticket Dispenser Process**: Assigns tickets to users.
+- **Operator Processes**: Manage specialized counters and serve users.
+- **User Processes**: Go to the post office and request services.
+- **Shared Resources**: Shared memory, semaphores, and message queues.
 
 ---
 
-### ▶️ Esecuzione del progetto
+### ⚙️ Technologies and Tools
+- Language: **C**
+- IPC Mechanisms: **shared memory**, **semaphores**, **message queues**
+- Compilation: **Makefile**
+- Technical Documentation: **Doxygen**
+- Statistics output in **CSV** format
 
-#### Compilazione
-Per compilare tutti i componenti del progetto:
+---
+
+### ▶️ Project Execution
+
+#### Compilation
+To compile all project components:
 ```bash
 make all
-```
-
-#### Pulizia
-Per rimuovere i file exe + .csv:
-```bash
-make clean
-```
-
-#### Compilazione
-Per avviare la simulazione (in ´bin´):
-```bash
-./direttore
-```
-
-> **Nota:** Questo progetto è parte della valutazione del corso e **non deve essere condiviso** o riutilizzato senza autorizzazione fino a novembre 2025, come indicato nel regolamento didattico.
