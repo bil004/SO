@@ -1,4 +1,4 @@
-# Operating Systems 2024/25
+# Sistemi Operativi 2024/25
 
 ## Post Office Simulation
 
